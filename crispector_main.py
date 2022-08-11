@@ -188,7 +188,8 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
 
         tx_allele_df_initializer = AlleleForTx()
-        tx_reads_d_allele, sites_score = tx_allele_df_initializer.run(tx_reads_d, mock_reads_d_allele)
+        tx_reads_d_allele, sites_score, ratios_df = tx_allele_df_initializer.run(tx_reads_d, mock_reads_d_allele,
+                                                                      allele_check._df_mock_tx_snp_ratios)
 
         ##############################################################################################
         # OUTFILE

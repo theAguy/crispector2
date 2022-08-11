@@ -1,4 +1,4 @@
-from crispector.utils.constants_and_types import SITE_NAME, IndelType, Path, FREQ, IS_EDIT, TX_READ_NUM, \
+from utils.constants_and_types import SITE_NAME, IndelType, Path, FREQ, IS_EDIT, TX_READ_NUM, \
     MOCK_READ_NUM, TX_EDIT, EDIT_PERCENT, CI_LOW, CI_HIGH, READ_LEN_SIDE, ALIGN_CUT_SITE, ALIGNMENT_W_INS, \
     ALIGNMENT_W_DEL, POS_IDX_E, POS_IDX_S, INDEL_TYPE, ExpType, ON_TARGET, IsEdit, C_TX, C_MOCK, \
     SUMMARY_RESULTS_TITLES, OFF_TARGET_COLOR, ON_TARGET_COLOR, OUTPUT_DIR, DISCARDED_SITES, \
@@ -13,10 +13,10 @@ import math
 import os
 import warnings
 from typing import List, Tuple, Dict
-from crispector.input_processing.input_processing import InputProcessing
-from crispector.modifications.modification_types import ModificationTypes
-from crispector.algorithm.core_algorithm import CoreAlgorithm
-from crispector.modifications.modification_tables import ModificationTables
+from input_processing.input_processing import InputProcessing
+from modifications.modification_types import ModificationTypes
+from algorithm.core_algorithm import CoreAlgorithm
+from modifications.modification_tables import ModificationTables
 import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot as plt

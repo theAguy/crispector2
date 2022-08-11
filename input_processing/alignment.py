@@ -1,14 +1,14 @@
 import gzip
 import os
-from crispector.utils.exceptions import AlignerSubstitutionDoesntExist
-from crispector.utils.constants_and_types import ReadsDf, IndelType, Path, DNASeq, CigarPath, \
+from utils.exceptions import AlignerSubstitutionDoesntExist
+from utils.constants_and_types import ReadsDf, IndelType, Path, DNASeq, CigarPath, \
     READ, ALIGNMENT_W_INS, ALIGNMENT_W_DEL, CIGAR, ALIGN_SCORE, FREQ, INS_LEN, INS_POS, DEL_LEN, DEL_START, \
     DEL_END, SUB_CNT, SUB_POS, INDEL_COLS, CIGAR_D, CIGAR_I, \
     CIGAR_S, CIGAR_M, AlignedIndel, DEL_BASE, INS_BASE, SUB_BASE, REVERSED, CIGAR_LEN, CIGAR_LEN_THRESHOLD, \
     ALIGN_CUT_SITE, ALIGNMENT_HUMAN, FILTERED_PATH, ExpType
-from crispector.input_processing.utils import reverse_complement, parse_cigar
-from crispector.utils.logger import LoggerWrapper
-from crispector.utils.configurator import Configurator
+from input_processing.utils import reverse_complement, parse_cigar
+from utils.logger import LoggerWrapper
+from utils.configurator import Configurator
 from typing import List, Tuple, Dict
 import pandas as pd
 from Bio import Align
@@ -47,7 +47,7 @@ class Alignment:
                 raise AlignerSubstitutionDoesntExist(align_cfg["substitution_matrix"])
 
     def align_reads(self, reads_df: ReadsDf, reference: DNASeq, cut_site: int, primers_len: int,
-                    output: Path, exp_name: str, exp_type: ExpType) -> ReadsDf:
+                    output: Path, exp_name: str, exp_type: ExpType, allele=False) -> ReadsDf:
         """
         - Align each read to his reference and filter noisy alignments.
         - Function add columns to reads_df in place.
@@ -70,7 +70,9 @@ class Alignment:
         self._align_reads_to_amplicon(reads_df, reference)
 
         # Filter reads with low alignment score
-        self._filter_low_score_reads(reads_df, primers_len, output, exp_name, exp_type)
+        # TBD: This is a new line - confirm
+        if not allele:
+            self._filter_low_score_reads(reads_df, primers_len, output, exp_name, exp_type)
 
         self._logger.debug("Alignment for {} - Needleman-Wunsch alignment done.".format(exp_name))
 
@@ -87,6 +89,7 @@ class Alignment:
 
         # Remove unnecessary columns
         reads_df.drop(columns=[REVERSED], inplace=True)
+        # TBD: add different print for allelic case
         self._logger.info("Alignment for {} - Done.".format(exp_name))
 
         return reads_df

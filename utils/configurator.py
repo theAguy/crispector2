@@ -2,8 +2,8 @@ import os
 
 import yaml
 
-from crispector.utils.constants_and_types import Path
-from crispector.utils.exceptions import ConfiguratorIsCalledBeforeInitConfigPath
+from utils.constants_and_types import Path
+from utils.exceptions import ConfiguratorIsCalledBeforeInitConfigPath
 
 
 class Configurator:

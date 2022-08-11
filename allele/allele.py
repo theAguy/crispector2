@@ -3,8 +3,8 @@ import pandas as pd
 from scipy.stats import entropy
 import scipy.stats
 import math
-from crispector.input_processing.alignment import Alignment
-from crispector.utils.configurator import Configurator
+from input_processing.alignment import Alignment
+from utils.configurator import Configurator
 import copy
 from Bio import pairwise2
 from Bio import Align
@@ -22,10 +22,13 @@ class AlleleForMock:
         self._ratios = ratios
         self._new_allels = dict()
         self._consensus_len = None
-        # TBD: ratio to filter out from mock-snp-detection due to different length of reads:
+        # TBD change: ratio to filter out from mock-snp-detection due to different length of reads:
         self._length_ratio = 0.3
-        # one side length of window opening: keep it even number
+        # TBD change: one side length of window opening: keep it even number.
+        # TBD: put it in utils and import it from there
         self._half_window_len = 10
+        # TBD change: set df for the ratios in mock vs. tx
+        self._df_mock_tx_snp_ratios = pd.DataFrame(columns=['site_name', 'mock_ratios', 'tx_ratios'])
 
     # -------------------------------#
     ######### Public methods #########
@@ -41,7 +44,7 @@ class AlleleForMock:
 
         if self.mock_SNP_detection(): # if the function find ONE SNP ONLY
             df = self._df
-            # filter reads with len different than consencus - add: open window arounf the filtered reads and find the right SNP nuc base
+            # filter reads with len different than consencus - add: open window around the filtered reads and find the right SNP nuc base
             len_reads = list(df['alignment_w_del'].str.len())
             df['len'] = len_reads
             mask = df['len'] == self._consensus_len
@@ -50,7 +53,12 @@ class AlleleForMock:
             print(site_name, sum(list(filtered_reads['frequency']))) # TBD deleted
             # end of filtering
             filtered_df['snp_nuc_type'] = filtered_df.alignment_w_del.str[self._snp_locus[0]] # set the snp type in each row
-            for _key,_num in self._nuc_distribution.items():                # iterate over all possible snp
+            # insert the results to self._df:
+            curr_mock_df = pd.DataFrame(data=[[self._site_name, self._nuc_distribution, None]],
+                                        columns=['site_name', 'mock_ratios', 'tx_ratios'])
+            self._df_mock_tx_snp_ratios = pd.concat([self._df_mock_tx_snp_ratios, curr_mock_df], ignore_index=True)
+            for _key, _num in self._nuc_distribution.items():                # iterate over all possible snp
+                # TBD change: to "number of alleles" that will be calculated in the mock_SNP_detection
                 if _num >= 0.20:                                             # if snp percentage is greater then 20%
                     allele_window = self._window[:self._half_window_len] + _key + self._window[self._half_window_len+1:] # take the window with the snp of that has more then 25% representation
                     df_for_curr_allele = filtered_df.loc[filtered_df['snp_nuc_type'] == _key] # filter df for reads with the current snp
@@ -224,7 +232,7 @@ class AlleleForMock:
                 else:
                     continue
 
-            # TBD EXTAND: handle return of reads from filtered_df only for one snp for now:
+            # TBD EXTEND: handle return of reads from filtered_df only for one snp for now:
             reference_read = same_len_df.loc[list(same_len_df['frequency']).index(max(same_len_df['frequency'])), 'alignment']
             sum_read_before_adding = sum(dict_dist_nuc.values())
             for i, snp_loc in enumerate(self._snp_locus):
@@ -294,7 +302,7 @@ class AlleleForTx:
     ######### Public methods #########
     # -------------------------------#
 
-    def run(self,tx_df, new_allels):
+    def run(self,tx_df, new_allels, ratios_df):
         self._tx_df = tx_df
         self._new_allels = new_allels
         self._sites_score = pd.DataFrame(columns=['site_name', 'avg_score'])
@@ -307,7 +315,7 @@ class AlleleForTx:
                 self._new_tx_df[tx_site_name] = []
                 tx_site_df['allele'] = None
                 tx_site_df['alignment_score'] = math.nan
-                list_sites_of_allele = self._new_allels[tx_site_name] # list of all relevant alleles for this site
+                list_sites_of_allele = self._new_allels[tx_site_name] # list of all relevant allele df's for this site
                 windows = list()
                 new_sites_name = list()
                 for site_allele in list_sites_of_allele: # iterate over all possible alleles
@@ -321,8 +329,15 @@ class AlleleForTx:
                         scores.append(curr_score)
                     tx_site_df.loc[i,'allele'] = new_sites_name[np.argmin(scores)]
                     tx_site_df.loc[i, 'alignment_score'] = np.min(scores)
+
+                ratios_dict = dict()
+                # set the new df for the tx allele
                 for new_site in new_sites_name:
+                    # get the tx ratios for this site
+                    site_snp = new_site[-1]
                     tx_site_df_temp = tx_site_df.loc[tx_site_df['allele'] == new_site]
+                    sum_reads = sum(list(tx_site_df_temp['frequency']))
+                    ratios_dict[site_snp] = sum_reads
                     # calculate the alignment average score. If less than one [TBD]
                     avg_score = tx_site_df_temp['alignment_score'].mean(axis=0, skipna=True)
                     self._sites_score = self._sites_score.append({'site_name': new_site, 'avg_score':avg_score}, ignore_index=True)
@@ -330,7 +345,15 @@ class AlleleForTx:
                     tx_site_df_temp = tx_site_df_temp.drop(labels='alignment_score', axis=1)
                     self._new_tx_df[tx_site_name].append([new_site,tx_site_df_temp])
 
-        return self._new_tx_df, round(self._sites_score, 3)
+                # normalize the dict
+                sum_all_reads = sum(ratios_dict.values())
+                for _i in ratios_dict.keys():
+                    ratios_dict[_i] /= sum_all_reads
+
+                # append to df
+                ratios_df.at[list(ratios_df['site_name']).index(tx_site_name), 'tx_ratios'] = ratios_dict
+
+        return self._new_tx_df, round(self._sites_score, 3), ratios_df
 
 
 
@@ -417,8 +440,8 @@ def get_snp_locus_and_score(curr_amplicon, SNP_window):
         if curr_gap_score < smallest_gap:
             smallest_gap = curr_gap_score
             i_smallest = i
-
-    return i_smallest + self._half_window_len, smallest_gap
+    # TBD CHANE: change 10 to self._half_window_len which will be in utils
+    return i_smallest + 10, smallest_gap
 
 
 def align_allele_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon_min_score):
@@ -440,7 +463,7 @@ def align_allele_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon
             cut_site = ref_df.loc[allele_name, 'cut-site']
             ref_amplicon = ref_df.loc[allele_name, 'AmpliconReference']
 
-            new_allele_df = _aligner.align_reads(allele_df, ref_amplicon, cut_site, None, None, None, None)
+            new_allele_df = _aligner.align_reads(allele_df, ref_amplicon, cut_site, None, None, None, None, allele=True)
             new_sites[site][i][1] = new_allele_df
 
     return new_sites
