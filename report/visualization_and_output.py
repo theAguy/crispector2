@@ -24,7 +24,7 @@ import seaborn as sns #
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
-from crispector.utils.logger import LoggerWrapper
+from utils.logger import LoggerWrapper
 from copy import deepcopy
 from matplotlib.collections import QuadMesh
 import shutil

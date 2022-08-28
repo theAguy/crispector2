@@ -141,21 +141,29 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         for site_name in mock_reads_d.keys():
             df_allele = mock_reads_d[site_name]
             mock_reads_d_allele = allele_check.run(site_name, df_allele)
-        # if allele:
-        #     mock_reads_d = mock_reads_d_allele
+        if allele:
+            mock_reads_d = mock_reads_d_allele
 
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/mock_reads_d_allele', 'wb')
-        pickle.dump(mock_reads_d_allele, outfile)
-        outfile.close()
+        # outfile = open('pickle/mock_reads_d_allele', 'wb')
+        # pickle.dump(mock_reads_d_allele, outfile)
+        # outfile.close()
+        #
+        # outfile = open('pickle/df_mock_tx_snp_ratios', 'wb')
+        # pickle.dump(allele_check._df_mock_tx_snp_ratios, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        # infile = open('pickle/mock_reads_d_allele', 'rb')
-        # mock_reads_d_allele = pickle.load(infile)
-        # infile.close()
+        infile = open('pickle/mock_reads_d_allele', 'rb')
+        mock_reads_d_allele = pickle.load(infile)
+        infile.close()
+
+        infile = open('pickle/df_mock_tx_snp_ratios', 'rb')
+        allele_check._df_mock_tx_snp_ratios = pickle.load(infile)
+        infile.close()
         ##############################################################################################
         ##############################################################################################
 
@@ -175,9 +183,9 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/mock_reads_d_final', 'wb')
-        pickle.dump(mock_reads_d, outfile)
-        outfile.close()
+        # outfile = open('pickle/mock_reads_d_final', 'wb')
+        # pickle.dump(mock_reads_d, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -190,17 +198,19 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         tx_allele_df_initializer = AlleleForTx()
         tx_reads_d_allele, sites_score, ratios_df = tx_allele_df_initializer.run(tx_reads_d, mock_reads_d_allele,
                                                                       allele_check._df_mock_tx_snp_ratios)
-
+        # TBD: check ratios gaps between mock to tx
+        # TBD DELETE
+        ratios_df.to_csv('ratios_df.csv')
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/sites_score', 'wb')
-        pickle.dump(sites_score, outfile)
-        outfile.close()
-
-        outfile = open('pickle/tx_reads_d_allele', 'wb')
-        pickle.dump(tx_reads_d_allele, outfile)
-        outfile.close()
+        # outfile = open('pickle/sites_score', 'wb')
+        # pickle.dump(sites_score, outfile)
+        # outfile.close()
+        #
+        # outfile = open('pickle/tx_reads_d_allele', 'wb')
+        # pickle.dump(tx_reads_d_allele, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -227,13 +237,13 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/aligned_tx_reads_d_allele', 'wb')
-        pickle.dump(aligned_tx_reads_d_allele, outfile)
-        outfile.close()
-
-        outfile = open('pickle/tx_reads_d_final', 'wb')
-        pickle.dump(tx_reads_d, outfile)
-        outfile.close()
+        # outfile = open('pickle/aligned_tx_reads_d_allele', 'wb')
+        # pickle.dump(aligned_tx_reads_d_allele, outfile)
+        # outfile.close()
+        #
+        # outfile = open('pickle/tx_reads_d_final', 'wb')
+        # pickle.dump(tx_reads_d, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -261,9 +271,9 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/allele_ref_df', 'wb')
-        pickle.dump(aligned_tx_reads_d_allele, outfile)
-        outfile.close()
+        # outfile = open('pickle/allele_ref_df', 'wb')
+        # pickle.dump(aligned_tx_reads_d_allele, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -303,23 +313,23 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/tables_d', 'wb')
-        pickle.dump(tables_d, outfile)
-        outfile.close()
-
-        outfile = open('pickle/override_noise_estimation', 'wb')
-        pickle.dump(override_noise_estimation, outfile)
-        outfile.close()
+        # outfile = open('pickle/tables_d', 'wb')
+        # pickle.dump(tables_d, outfile)
+        # outfile.close()
+        #
+        # outfile = open('pickle/override_noise_estimation', 'wb')
+        # pickle.dump(override_noise_estimation, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        infile = open('pickle/tables_d', 'rb')
-        tables_d = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/override_noise_estimation', 'rb')
-        override_noise_estimation = pickle.load(infile)
-        infile.close()
+        # infile = open('pickle/tables_d', 'rb')
+        # tables_d = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/override_noise_estimation', 'rb')
+        # override_noise_estimation = pickle.load(infile)
+        # infile.close()
         ##############################################################################################
         ##############################################################################################
 
