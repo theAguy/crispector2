@@ -137,37 +137,38 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         # finding alleles in each site in mock and insert to a new dictionary
         mock_reads_d_allele = dict()
-        allele_check = AlleleForMock((0.8, 0.2)) # TBD: make as a hyperparameter
+        allele_check = AlleleForMock((0.8, 0.2), ref_df) # TBD: make as a hyperparameter
         for site_name in mock_reads_d.keys():
+            print(site_name) # TBD: delete
             df_allele = mock_reads_d[site_name]
             mock_reads_d_allele = allele_check.run(site_name, df_allele)
-        if allele:
-            mock_reads_d = mock_reads_d_allele
+        ## if allele:
+        ##     mock_reads_d = mock_reads_d_allele
 
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/mock_reads_d_allele', 'wb')
-        # pickle.dump(mock_reads_d_allele, outfile)
-        # outfile.close()
-        #
-        # outfile = open('pickle/df_mock_tx_snp_ratios', 'wb')
-        # pickle.dump(allele_check._df_mock_tx_snp_ratios, outfile)
-        # outfile.close()
+        outfile = open('pickle/mock_reads_d_allele_multi', 'wb')
+        pickle.dump(mock_reads_d_allele, outfile)
+        outfile.close()
+
+        outfile = open('pickle/df_mock_tx_snp_ratios_multi', 'wb')
+        pickle.dump(allele_check._df_mock_tx_snp_ratios, outfile)
+        outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        infile = open('pickle/mock_reads_d_allele', 'rb')
-        mock_reads_d_allele = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/df_mock_tx_snp_ratios', 'rb')
-        allele_check._df_mock_tx_snp_ratios = pickle.load(infile)
-        infile.close()
+        # infile = open('pickle/mock_reads_d_allele_multi', 'rb')
+        # mock_reads_d_allele = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/df_mock_tx_snp_ratios_multi', 'rb')
+        # allele_check._df_mock_tx_snp_ratios = pickle.load(infile)
+        # infile.close()
         ##############################################################################################
         ##############################################################################################
 
-        # creating new ref_df with the new sites
+        # create new ref_df with the new sites
         ref_df_initializer = ref_dfAlleleHandler()
         allele_ref_df = ref_df_initializer.run(ref_df, mock_reads_d_allele)
 
@@ -175,7 +176,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         aligned_mock_reads_d_allele = align_allele_df(mock_reads_d_allele, allele_ref_df,
                                                       amplicon_min_score, translocation_amplicon_min_score)
 
-        # assigning the new alleles df's to the original sites df's
+        # assigning the new allele dfs to the original site dfs
         for key, site_lists in aligned_mock_reads_d_allele.items():
             for site_allele in site_lists:
                 mock_reads_d[site_allele[0]] = site_allele[1]
@@ -183,34 +184,36 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/mock_reads_d_final', 'wb')
-        # pickle.dump(mock_reads_d, outfile)
-        # outfile.close()
+        outfile = open('pickle/mock_reads_d_final_multi', 'wb')
+        pickle.dump(mock_reads_d, outfile)
+        outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        # infile = open('pickle/mock_reads_d_final', 'rb')
+        # infile = open('pickle/mock_reads_d_final_multi', 'rb')
         # mock_reads_d = pickle.load(infile)
         # infile.close()
         ##############################################################################################
         ##############################################################################################
 
-        tx_allele_df_initializer = AlleleForTx()
-        tx_reads_d_allele, sites_score, ratios_df = tx_allele_df_initializer.run(tx_reads_d, mock_reads_d_allele,
-                                                                      allele_check._df_mock_tx_snp_ratios)
+        # treat all the treatment as for alleles
+        tx_allele_df_initializer = AlleleForTx(tx_reads_d, mock_reads_d_allele)
+        tx_reads_d_allele, sites_score, ratios_df = tx_allele_df_initializer.run(allele_check._df_mock_tx_snp_ratios)
+
         # TBD: check ratios gaps between mock to tx
         # TBD DELETE
+        uncertain = tx_allele_df_initializer.uncertain_reads
         ratios_df.to_csv('ratios_df.csv')
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/sites_score', 'wb')
-        # pickle.dump(sites_score, outfile)
-        # outfile.close()
-        #
-        # outfile = open('pickle/tx_reads_d_allele', 'wb')
-        # pickle.dump(tx_reads_d_allele, outfile)
-        # outfile.close()
+        outfile = open('pickle/sites_score', 'wb')
+        pickle.dump(sites_score, outfile)
+        outfile.close()
+
+        outfile = open('pickle/tx_reads_d_allele', 'wb')
+        pickle.dump(tx_reads_d_allele, outfile)
+        outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -223,7 +226,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # infile.close()
         ##############################################################################################
         ##############################################################################################
-
 
         # align new site again - tx
         aligned_tx_reads_d_allele = align_allele_df(tx_reads_d_allele, allele_ref_df, amplicon_min_score,
@@ -260,7 +262,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         allele_ref_df.index.name = 'index'
         allele_ref_df = allele_ref_df.merge(sites_score, how='left', left_on='Site Name', right_on='site_name')
         allele_ref_df.index = allele_ref_df[SITE_NAME]
-
 
         # Create site output folders
         for site, row in allele_ref_df.iterrows():
