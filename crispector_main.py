@@ -19,7 +19,6 @@ from utils.configurator import Configurator
 from report.visualization_and_output import create_site_output, create_experiment_output
 # TBD: NEW import START
 from allele.allele import AlleleForMock, ref_dfAlleleHandler, AlleleForTx, align_allele_df
-import pickle
 import copy
 # NEW import END
 import os
@@ -36,7 +35,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         max_edit_distance_on_primers: int, confidence_interval: float, min_editing_activity: float,
         translocation_p_value: float, suppress_site_output: bool, disable_translocations: bool,
         enable_substitutions: bool, keep_intermediate_files: bool, command_used: str):
-
     try:
         # Create report output folder
         if not os.path.exists(report_output):
@@ -76,21 +74,18 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
             if not os.path.exists(site_output):
                 os.makedirs(site_output)
 
-
         # Create InputProcessing instance
         # TBD: return #
         input_processing = InputProcessing(ref_df, output, amplicon_min_score, translocation_amplicon_min_score,
                                            min_read_length_without_primers, cut_site_position, disable_translocations,
                                            fastp_options_string, keep_intermediate_files, max_edit_distance_on_primers)
 
-
         # process input: TBD - return
         # tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
 
-
-        # get allelity from mock
+        # get alleles from mock
         ''' NEW !!!! : START '''
-
+        guide_name_for_output = list(ref_df['Site Name'])[0]
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
@@ -137,11 +132,16 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         # finding alleles in each site in mock and insert to a new dictionary
         mock_reads_d_allele = dict()
-        allele_check = AlleleForMock((0.8, 0.2), ref_df) # TBD: make as a hyperparameter
+        allele_check = AlleleForMock((0.8, 0.2), ref_df)  # TBD: make as a hyperparameter
         for site_name in mock_reads_d.keys():
-            print(site_name) # TBD: delete
+            print(site_name)  # TBD: delete
             df_allele = mock_reads_d[site_name]
             mock_reads_d_allele = allele_check.run(site_name, df_allele)
+        reads_dropdown_mock_df = pd.DataFrame(data=allele_check.reads_drop_down,
+                                              columns=['Site name', 'Original read count', 'Same length',
+                                                       'With returned', 'Dropped only', 'filtered reads',
+                                                       'final read count'])
+        reads_dropdown_mock_df.to_csv(f'CRISPECTOR/reads_dropdown_mock_{guide_name_for_output}.csv')
         ## if allele:
         ##     mock_reads_d = mock_reads_d_allele
 
@@ -153,7 +153,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         outfile.close()
 
         outfile = open('pickle/df_mock_tx_snp_ratios_multi', 'wb')
-        pickle.dump(allele_check._df_mock_tx_snp_ratios, outfile)
+        pickle.dump(allele_check.df_mock_tx_snp_ratios, outfile)
         outfile.close()
         ##############################################################################################
         # INFILE
@@ -179,6 +179,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # assigning the new allele dfs to the original site dfs
         for key, site_lists in aligned_mock_reads_d_allele.items():
             for site_allele in site_lists:
+                # site_allele[0] = site allele name || site_allele[1] = allele df
                 mock_reads_d[site_allele[0]] = site_allele[1]
 
         ##############################################################################################
@@ -198,12 +199,16 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         # treat all the treatment as for alleles
         tx_allele_df_initializer = AlleleForTx(tx_reads_d, mock_reads_d_allele)
-        tx_reads_d_allele, sites_score, ratios_df = tx_allele_df_initializer.run(allele_check._df_mock_tx_snp_ratios)
+        tx_reads_d_allele, sites_score, ratios_df = tx_allele_df_initializer.run(allele_check.df_mock_tx_snp_ratios)
 
         # TBD: check ratios gaps between mock to tx
         # TBD DELETE
         uncertain = tx_allele_df_initializer.uncertain_reads
-        ratios_df.to_csv('ratios_df.csv')
+        reads_dropdown_tx = tx_allele_df_initializer.reads_dropdown
+        reads_dropdown_tx_df = pd.DataFrame(data=reads_dropdown_tx, columns=['Site name', 'Original read count',
+                                                                             'filtered count', 'uncertain count'])
+        reads_dropdown_tx_df.to_csv(f'CRISPECTOR/reads_dropdown_tx_{guide_name_for_output}.csv')
+        ratios_df.to_csv(f'CRISPECTOR/ratios_df_{guide_name_for_output}.csv')
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
@@ -229,7 +234,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         # align new site again - tx
         aligned_tx_reads_d_allele = align_allele_df(tx_reads_d_allele, allele_ref_df, amplicon_min_score,
-                                                      translocation_amplicon_min_score)
+                                                    translocation_amplicon_min_score)
 
         if allele:
             for key, site_lists in aligned_tx_reads_d_allele.items():
@@ -285,9 +290,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         ##############################################################################################
 
-
         ''' NEW !!!! : END '''
-
 
         # Get modification types and positions priors
         modifications = ModificationTypes.init_from_cfg(enable_substitutions)
@@ -297,6 +300,8 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         tables_d: Dict[str, ModificationTables] = dict()
         for site, row in allele_ref_df.iterrows():
+            if site == 'gINS11_FANCA_129_[118, 135]_AG':
+                print('ok')
             tx_reads_num = tx_reads_d[site][FREQ].sum().astype(int)
             mock_reads_num = mock_reads_d[site][FREQ].sum().astype(int)
             if donor and row[ON_TARGET]:
@@ -333,7 +338,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # infile.close()
         ##############################################################################################
         ##############################################################################################
-
 
         # Compute binomial coin for all modification types
         binom_p_d = compute_binom_p(tables_d, modifications, override_noise_estimation, allele_ref_df)
