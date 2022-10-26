@@ -356,7 +356,8 @@ class AlleleForMock:
                 nuc_dict[phase] += freq
             else:
                 nuc_dict[phase] = freq
-
+        # making sure that the dictionary is sorted
+        nuc_dict = dict(sorted(nuc_dict.items(), key=lambda item: item[1], reverse=True))
         # normalized the dictionary of the nucleotide distribution
         self._total_num_reads = sum(nuc_dict.values())
         for snp in nuc_dict.keys():
@@ -579,7 +580,7 @@ class AlleleForMock:
         reads_with_no_alleles = df_w_returned[~df_w_returned['snp_phase'].isin(allele_phases)]
         if len(df_dropped) > 0:
             reads_with_no_alleles = pd.concat([reads_with_no_alleles, df_dropped])
-        if one_snp:
+        if one_snp:     # TBD: check if needed. Maybe redundant (966). It's NOT!!!
             for i, row in reads_with_no_alleles.iterrows():
                 snp_type = random.choice(allele_phases)
                 reads_with_no_alleles.at[i, 'snp_phase'] = snp_type
@@ -644,19 +645,23 @@ class AlleleForTx:
 
     def run(self, ratios_df):
         np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
-
+        original_sites = dict()
         for tx_site_name, tx_site_df in self._tx_df.items():
             # TBD: DELETE start
             print(tx_site_name)
-            if tx_site_name == 'gINS11_FANCA_142':
+            if tx_site_name == 'gINS11_FANCA_0029':
                 print('ok')
             # TBD: DELETE end
 
             # if tx site has an allele site
             if tx_site_name in self._sites_to_be_alleles:
+                temp_original_site_name = tx_site_name+'_Second'
                 # prepare relevant information for execution
                 self._new_tx_df[tx_site_name] = []
+                # these modifications changing the tx_reads_d from the main
                 tx_site_df['allele'] = None
+                tx_site_df['is_random'] = False
+                tx_site_df['is_filtered'] = False
                 tx_site_df['alignment_score'] = math.nan
                 # uncertain_reads = pd.DataFrame(columns=tx_site_df.columns)
                 # reads_to_be_filtered = pd.DataFrame(columns=tx_site_df.columns)
@@ -666,7 +671,7 @@ class AlleleForTx:
                 list_sites_of_allele = self._new_alleles[tx_site_name]
                 windows = list()
                 new_sites_name = list()
-                CTC_list = list()
+                # CTC_list = list()
                 SNP_loci = list_sites_of_allele[0][2]
                 # iterate over all possible alleles and add the window and the name of the allele site
                 for site_allele in list_sites_of_allele:
@@ -692,6 +697,7 @@ class AlleleForTx:
                             # raise a numpy.VisibleDeprecationWarning error. canceled it the error
                             # row_to_append.loc[i, 'alignment_score'] = alignment_score
                             row['alignment_score'] = alignment_score
+                            tx_site_df.loc[i, 'is_random'] = True
                             # uncertain_reads = pd.concat([uncertain_reads, row_to_append])
                             uncertain_reads_list.append(row)
                     else:
@@ -703,7 +709,8 @@ class AlleleForTx:
                         # row_to_append.loc[i, 'alignment_score'] = alignment_score
                         # reads_to_be_filtered = pd.concat([reads_to_be_filtered, row_to_append])
                         reads_to_be_filtered_list.append(row)
-                        tx_site_df = tx_site_df.drop(i)
+                        tx_site_df.loc[i, 'is_filtered'] = True
+                        # tx_site_df = tx_site_df.drop(i) # TBD: is it deleting it from the original site as well?
 
                 uncertain_reads = pd.DataFrame(data=uncertain_reads_list, columns=tx_site_df.columns)
                 reads_to_be_filtered = pd.DataFrame(data=reads_to_be_filtered_list, columns=tx_site_df.columns)
@@ -725,9 +732,9 @@ class AlleleForTx:
                     avg_score = tx_site_df_temp['alignment_score'].mean(axis=0, skipna=True)
                     self._sites_score = self._sites_score.append({'site_name': new_site, 'avg_score': avg_score},
                                                                  ignore_index=True)
-                    tx_site_df_temp = tx_site_df_temp.drop(labels='allele', axis=1)
-                    tx_site_df_temp = tx_site_df_temp.drop(labels='alignment_score', axis=1)
+                    tx_site_df_temp = tx_site_df_temp.drop(labels=['allele', 'alignment_score'], axis=1)  # TBD: maybe i should add 'is_random'
                     self._new_tx_df[tx_site_name].append([new_site, tx_site_df_temp])
+                original_sites[tx_site_name] = tx_site_df   # TBD: maybe delete
                 # TBD: insert to log:
                 self.uncertain_reads[tx_site_name] = [sum(uncertain_reads['frequency']),
                                                       sum(tx_site_df['frequency'])]
@@ -741,9 +748,9 @@ class AlleleForTx:
                     print(f'problem with {tx_site_name}')
 
                 # append to df - TBD: return later
-                # ratios_df.at[list(ratios_df['site_name']).index(tx_site_name), 'tx_ratios'] = ratios_dict
+                ratios_df.at[list(ratios_df['site_name']).index(tx_site_name), 'tx_ratios'] = ratios_dict
 
-        return self._new_tx_df, round(self._sites_score, 3), ratios_df
+        return self._new_tx_df, original_sites, round(self._sites_score, 3), ratios_df
 
     # -------------------------------#
     ######### Private methods ########
@@ -963,7 +970,7 @@ def determine_best_idx(curr_amplicon, SNP_window_information, SNP_loci, CTC_list
     # else - if there are several "best index":
     else:
         # if it is only one snp
-        if len(scores) == 1:
+        if len(scores) == 1:    # TBD: check if needed. Maybe redundant (582) No it's not. important for Tx
             is_random = True
             best_index = random.choice(index_list[0])
             if CTC_list[0]:
@@ -1038,7 +1045,7 @@ def best_index_wrapper(curr_amplicon, SNP_window_information, SNP_loci):
     :return: df: the best index of allele to be set, alignment score, if it was picked by random, the whole list
     """
     # add to list the True/False for each CTC window
-    CTC_list = list()
+    CTC_list = list()       # TBD: put CTC into a function outside here and outside every row iteration
     for window_info in SNP_window_information[0]:
         CTC_list.append(window_info[1])
     scores = calc_alignments_scores(curr_amplicon, SNP_window_information, SNP_loci, CTC_list)

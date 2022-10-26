@@ -20,7 +20,7 @@ class ModificationTables:
         self._amplicon = ref_df_row[REFERENCE]
         self._tables: ModTables = dict()
         self._pointers: ModTablesP = dict()
-        self._tx_dist: ModDist = pd.DataFrame() # Tx modification distribution - for visualization only
+        self._tx_dist: ModDist = pd.DataFrame()  # Tx modification distribution - for visualization only
         self._mock_dist: ModDist = pd.DataFrame()  # Mock modification distribution - for visualization only
         self._create_modification_tables_and_distribution()
         self._n_reads_tx = self._tx_reads[FREQ].sum()

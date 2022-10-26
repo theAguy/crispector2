@@ -81,7 +81,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                                            fastp_options_string, keep_intermediate_files, max_edit_distance_on_primers)
 
         # process input: TBD - return
-        # tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
+        tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
 
         # get alleles from mock
         ''' NEW !!!! : START '''
@@ -109,21 +109,21 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # INFILE
         ##############################################################################################
 
-        infile = open('pickle/tx_trans_df', 'rb')
-        tx_trans_df = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/mock_trans_df', 'rb')
-        mock_trans_df = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/mock_reads_d_original', 'rb')
-        mock_reads_d = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/tx_reads_d_original', 'rb')
-        tx_reads_d = pickle.load(infile)
-        infile.close()
+        # infile = open('pickle/tx_trans_df', 'rb')
+        # tx_trans_df = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/mock_trans_df', 'rb')
+        # mock_trans_df = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/mock_reads_d_original', 'rb')
+        # mock_reads_d = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/tx_reads_d_original', 'rb')
+        # tx_reads_d = pickle.load(infile)
+        # infile.close()
 
         ##############################################################################################
         ##############################################################################################
@@ -142,19 +142,19 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                                                        'With returned', 'Dropped only', 'filtered reads',
                                                        'final read count'])
         reads_dropdown_mock_df.to_csv(f'CRISPECTOR/reads_dropdown_mock_{guide_name_for_output}.csv')
-        ## if allele:
-        ##     mock_reads_d = mock_reads_d_allele
+        # if allele:
+        #     mock_reads_d = mock_reads_d_allele
 
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/mock_reads_d_allele_multi', 'wb')
-        pickle.dump(mock_reads_d_allele, outfile)
-        outfile.close()
-
-        outfile = open('pickle/df_mock_tx_snp_ratios_multi', 'wb')
-        pickle.dump(allele_check.df_mock_tx_snp_ratios, outfile)
-        outfile.close()
+        # outfile = open('pickle/mock_reads_d_allele_multi', 'wb')
+        # pickle.dump(mock_reads_d_allele, outfile)
+        # outfile.close()
+        #
+        # outfile = open('pickle/df_mock_tx_snp_ratios_multi', 'wb')
+        # pickle.dump(allele_check.df_mock_tx_snp_ratios, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -185,9 +185,9 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/mock_reads_d_final_multi', 'wb')
-        pickle.dump(mock_reads_d, outfile)
-        outfile.close()
+        # outfile = open('pickle/mock_reads_d_final_multi', 'wb')
+        # pickle.dump(mock_reads_d, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -199,7 +199,8 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         # treat all the treatment as for alleles
         tx_allele_df_initializer = AlleleForTx(tx_reads_d, mock_reads_d_allele)
-        tx_reads_d_allele, sites_score, ratios_df = tx_allele_df_initializer.run(allele_check.df_mock_tx_snp_ratios)
+        tx_reads_d_allele, original_sites, sites_score, ratios_df = \
+            tx_allele_df_initializer.run(allele_check.df_mock_tx_snp_ratios)
 
         # TBD: check ratios gaps between mock to tx
         # TBD DELETE
@@ -212,13 +213,9 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/sites_score', 'wb')
-        pickle.dump(sites_score, outfile)
-        outfile.close()
-
-        outfile = open('pickle/tx_reads_d_allele', 'wb')
-        pickle.dump(tx_reads_d_allele, outfile)
-        outfile.close()
+        # outfile = open('pickle/tx_reads_d_allele', 'wb')
+        # pickle.dump(tx_reads_d_allele, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -240,6 +237,12 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
             for key, site_lists in aligned_tx_reads_d_allele.items():
                 for site_allele in site_lists:
                     tx_reads_d[site_allele[0]] = site_allele[1]
+
+        # TBD: New addition. With additional columns (is_filtered and is_random)
+        site_names = list(tx_reads_d.keys())
+        for original_site_name, original_site_df in original_sites.items():
+            if original_site_name in site_names:
+                tx_reads_d[original_site_name] = original_site_df
 
         ##############################################################################################
         # OUTFILE
@@ -300,8 +303,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         tables_d: Dict[str, ModificationTables] = dict()
         for site, row in allele_ref_df.iterrows():
-            if site == 'gINS11_FANCA_129_[118, 135]_AG':
-                print('ok')
             tx_reads_num = tx_reads_d[site][FREQ].sum().astype(int)
             mock_reads_num = mock_reads_d[site][FREQ].sum().astype(int)
             if donor and row[ON_TARGET]:
@@ -336,8 +337,12 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # infile = open('pickle/override_noise_estimation', 'rb')
         # override_noise_estimation = pickle.load(infile)
         # infile.close()
+
         ##############################################################################################
         ##############################################################################################
+        # TBD: delete START
+        temp_dict_for_checking_edits = dict()
+        # TBD: delete END
 
         # Compute binomial coin for all modification types
         binom_p_d = compute_binom_p(tables_d, modifications, override_noise_estimation, allele_ref_df)
@@ -360,9 +365,19 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
             algorithm_d[site] = CoreAlgorithm(cut_site, modifications, binom_p_d[site], confidence_interval,
                                               row[ON_TARGET])
             result_summary_d[site] = algorithm_d[site].evaluate(tables_d[site])
+            # TBD: delete START
+            temp_dict_for_checking_edits[site] = tables_d[site]._tx_reads[tables_d[site]._tx_reads['is_edited'] == True]
+            # TBD: delete END
             result_summary_d[site][ON_TARGET] = row[ON_TARGET]
             logger.debug("Site {} - Editing activity is {:.2f}".format(site, result_summary_d[site][EDIT_PERCENT]))
-
+        # TBD: delete START
+        for site_name, site_edited_df in temp_dict_for_checking_edits.items():
+            if 'is_random' in site_edited_df.columns:
+                random_true = set(list(site_edited_df['is_random']))
+                filter_true = set(list(site_edited_df['is_filtered']))
+                if (True in random_true) or (True in filter_true):
+                    site_edited_df.to_csv(f'CRISPECTOR/{site_name}.csv')
+        # TBD: delete END
         # Convert result_summary dict to DataFrame
         summary_df: AlgResultDf = pd.DataFrame.from_dict(result_summary_d, orient='index')
         summary_df[SITE_NAME] = summary_df.index
