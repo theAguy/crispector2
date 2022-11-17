@@ -81,7 +81,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                                            fastp_options_string, keep_intermediate_files, max_edit_distance_on_primers)
 
         # process input: TBD - return
-        tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
+        # tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
 
         # get alleles from mock
         ''' NEW !!!! : START '''
@@ -109,21 +109,21 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # INFILE
         ##############################################################################################
 
-        # infile = open('pickle/tx_trans_df', 'rb')
-        # tx_trans_df = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('pickle/mock_trans_df', 'rb')
-        # mock_trans_df = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('pickle/mock_reads_d_original', 'rb')
-        # mock_reads_d = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('pickle/tx_reads_d_original', 'rb')
-        # tx_reads_d = pickle.load(infile)
-        # infile.close()
+        infile = open('pickle/tx_trans_df', 'rb')
+        tx_trans_df = pickle.load(infile)
+        infile.close()
+
+        infile = open('pickle/mock_trans_df', 'rb')
+        mock_trans_df = pickle.load(infile)
+        infile.close()
+
+        infile = open('pickle/mock_reads_d_original', 'rb')
+        mock_reads_d = pickle.load(infile)
+        infile.close()
+
+        infile = open('pickle/tx_reads_d_original', 'rb')
+        tx_reads_d = pickle.load(infile)
+        infile.close()
 
         ##############################################################################################
         ##############################################################################################
@@ -142,8 +142,9 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                                                        'With returned', 'Dropped only', 'filtered reads',
                                                        'final read count'])
         reads_dropdown_mock_df.to_csv(f'CRISPECTOR/reads_dropdown_mock_{guide_name_for_output}.csv')
-        # if allele:
-        #     mock_reads_d = mock_reads_d_allele
+
+        # # if allele:
+        # #     mock_reads_d = mock_reads_d_allele
 
         ##############################################################################################
         # OUTFILE
@@ -303,6 +304,10 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         tables_d: Dict[str, ModificationTables] = dict()
         for site, row in allele_ref_df.iterrows():
+            # TBD: DELETE
+            print(site)
+            if site == 'VEGFA1_5_[64, 65, 66]_TTC':
+                print(site)
             tx_reads_num = tx_reads_d[site][FREQ].sum().astype(int)
             mock_reads_num = mock_reads_d[site][FREQ].sum().astype(int)
             if donor and row[ON_TARGET]:

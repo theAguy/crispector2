@@ -66,8 +66,8 @@ class Alignment:
 
         # Align reads to their amplicon
         self._logger.debug("Alignment for {} - Start Needleman-Wunsch alignment for all reads.".format(exp_name))
-
-        self._align_reads_to_amplicon(reads_df, reference)
+        # TBD: added allele variable to here. maybe delete
+        self._align_reads_to_amplicon(reads_df, reference, allele)
 
         # Filter reads with low alignment score
         # TBD: This is a new line - confirm
@@ -209,7 +209,7 @@ class Alignment:
         # remove unaligned reads from reads_df
         reads_df.drop(unaligned_df.index, inplace=True)
 
-    def _align_reads_to_amplicon(self, reads: ReadsDf, reference: DNASeq):
+    def _align_reads_to_amplicon(self, reads: ReadsDf, reference: DNASeq, allele):
         """
         - Align all reads to their amplicon.
         - Compute cigar path.
@@ -232,6 +232,10 @@ class Alignment:
 
         new_cols_d = defaultdict(list)
         for row_idx, row in reads.iterrows():
+            # Original: read=row[READ]
+            # Test: read=read while read = row['alignment_w_del']
+            # TBD: Added if-else statement. Maybe delete after test.
+
             ref_w_ins, read_w_del, cigar, c_len, score = self.needle_wunsch_align(
                 reference=reference, read=row[READ])
             # compute both directions of alignment
@@ -266,13 +270,14 @@ class Alignment:
         :param read: read with deletions
         :return: cigar_path, cigar len
         """
+        # TBD: NOTE: added to this function 2 conditions in the Insertion and Deletion (added the "and" condition)
         cigar_path = []
         state: str = ""
         length = 0
         cigar_length = 0
         for ref_bp, read_bp in zip(reference, read):
             # Insertion
-            if ref_bp == "-":
+            if (ref_bp == "-") and (read_bp != "-"):
                 if (state != CIGAR_I) and (length != 0):
                     cigar_path.append("{}{}".format(length, state))
                     length = 1
@@ -281,7 +286,7 @@ class Alignment:
                     length += 1
                 state = CIGAR_I
             # Deletion
-            elif read_bp == "-":
+            elif (read_bp == "-") and (ref_bp != "-"):
                 if (state != CIGAR_D) and (length != 0):
                     cigar_path.append("{}{}".format(length, state))
                     length = 1

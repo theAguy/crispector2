@@ -100,6 +100,9 @@ class ModificationTables:
         dist_d = defaultdict(list)
 
         for row_idx, row in read.iterrows():
+            # TBD: DELETE
+            if row_idx==312:
+                print(row_idx)
             pos_idx = 0  # position index
             for length, length_wo_ins, indel_type, mixed_l in parse_cigar_with_mixed_indels(row[CIGAR]):
                 table_idx = self._modifications.find_index(indel_type, length)
