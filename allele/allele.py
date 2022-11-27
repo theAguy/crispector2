@@ -6,8 +6,6 @@ import math
 import random
 from input_processing.alignment import Alignment
 from utils.configurator import Configurator
-import copy
-# from Bio import pairwise2
 from Bio import Align
 
 
@@ -68,29 +66,12 @@ class AlleleForMock:
             self.df_mock_tx_snp_ratios = pd.concat([self.df_mock_tx_snp_ratios, curr_mock_df], ignore_index=True)
 
             # iterate over all possible snp
-            # for i in range(self._number_of_alleles):
             for allele in list(self._windows.keys()):
-                # phase = phases[i]
-                # allele_window_list = list()
                 # filter df for reads with the current snp and clean columns
                 df_for_curr_allele = df.loc[df['snp_phase'] == allele]
                 # get the most relevant amplicon for reference from df
                 amplicon = self._get_ref_amplicon(df_for_curr_allele, site_name)
-                # TBD: think what to do if it does not the same - I think I fixed it with the function above
-                # indx = df_for_curr_allele.index[0]
-                # if len(df_for_curr_allele.at[indx, 'alignment_w_del']) == len(
-                #         self._ref_df.at[site_name, 'AmpliconReference']):
-                #     amplicon = df_for_curr_allele.at[indx, 'alignment_w_del']
-                # else:
-                #     print('please dont')
-
                 df_for_curr_allele = df_for_curr_allele.drop(labels=['snp_phase', 'len', 'snp_nuc_type'], axis=1)
-                # prepare the window_search and the new_site_name
-                # for j, (window, CTC, add_before, add_after) in enumerate(self._window):
-                #     allele_window = window[:self._half_window_len + add_before - add_after] \
-                #                     + phases[i][j] + \
-                #                     window[add_before - add_after + self._half_window_len + 1:]
-                #     allele_window_list.append((allele_window, CTC, add_before, add_after))
                 allele_window_list = self._windows[allele]
                 # TBD: change the name to more relevant one
                 _new_name = self._site_name + '_' + str(self._snp_locus) + '_' + allele
@@ -218,54 +199,6 @@ class AlleleForMock:
 
         return start, end
 
-    # def _get_windows(self, reference_read, cut_site):
-    #     """
-    #      Create list of windows to be aligned to reads with different length then consensus, and create self._window
-    #      :param: reference_read: The reference read to extract window from
-    #      :param: cut_site: The consensus cut-site
-    #      :return: windows_list: List of all windows for further alignment
-    #      """
-    #     windows_list = list()
-    #     new_reference_read = reference_read
-    #     # Assigning all SNPs to be N in the reference read
-    #     for snp_locus in self._snp_locus:
-    #         new_reference_read = new_reference_read[:snp_locus] + 'N' + new_reference_read[snp_locus + 1:]
-    #
-    #     for i, snp_locus in enumerate(self._snp_locus):
-    #         add_nb_before = 0
-    #         add_nb_after = 0
-    #         CTC = False  # CTC = Close To Cut-site
-    #         if abs(snp_locus - cut_site) <= self._CTC_gap:
-    #             CTC = True
-    #
-    #         # if the read is close to the end, add from the left part some more nb
-    #         if len(new_reference_read) - snp_locus < self._half_window_len + 1:
-    #             add_nb_before = self._half_window_len - (len(new_reference_read) - snp_locus) + 1
-    #             window_search = new_reference_read[snp_locus - self._half_window_len - add_nb_before:snp_locus] \
-    #                             + 'N' + new_reference_read[snp_locus + 1:snp_locus + 1 + self._half_window_len]
-    #             window_for_tx_align = new_reference_read[snp_locus - self._half_window_len - add_nb_before:
-    #                                                  snp_locus + 1 + self._half_window_len]
-    #             windows_list.append((window_search, CTC, add_nb_before, add_nb_after))
-    #             self._window.append((window_for_tx_align, CTC, add_nb_before, add_nb_after))
-    #         # if the read is close to the start, add from the right part some more nb
-    #         elif snp_locus - self._half_window_len < 0:
-    #             add_nb_after = self._half_window_len - snp_locus
-    #             window_search = new_reference_read[:snp_locus] + 'N' + \
-    #                             new_reference_read[
-    #                             snp_locus + 1:snp_locus + 1 + self._half_window_len + add_nb_after]
-    #             window_for_tx_align = new_reference_read[:snp_locus + 1 + self._half_window_len + add_nb_after]
-    #             windows_list.append((window_search, CTC, add_nb_before, add_nb_after))
-    #             self._window.append((window_for_tx_align, CTC, add_nb_before, add_nb_after))
-    #         # if "normal"
-    #         else:
-    #             window_search = new_reference_read[snp_locus - self._half_window_len:snp_locus] + 'N' + \
-    #                             new_reference_read[snp_locus + 1:snp_locus + 1 + self._half_window_len]
-    #             window_for_tx_align = new_reference_read[snp_locus - self._half_window_len:
-    #                                                  snp_locus + 1 + self._half_window_len]
-    #             windows_list.append((window_search, CTC, add_nb_before, add_nb_after))
-    #             self._window.append((window_for_tx_align, CTC, add_nb_before, add_nb_after))
-    #     return windows_list
-
     def _get_specific_windows(self, reference_read):
         """
          Create list of windows to be aligned to reads with different length then consensus, and create self._window
@@ -378,7 +311,7 @@ class AlleleForMock:
                     break
         # TBD: add to log
         df_dropped = pd.DataFrame(data=df_dropped_list, columns=list(filtered_df.columns))
-        print(f'Length of dropped: {len(df_dropped)}')
+        # print(f'Length of dropped: {len(df_dropped)}')
         df = pd.concat([df, filtered_df])
 
         return df, df_dropped
@@ -509,53 +442,6 @@ class AlleleForMock:
         # TBD: make hyperparameter
         return math.pow(_coverage, 1 / 10) * math.pow(_entropy, 9 / 10)
 
-    # def _get_window_for_multi_snp(self, ref_read_for_window, cut_site):
-    #     """
-    #      Get all windows for further alignment for multi-snp
-    #      :param: ref_read_for_window: Reference read to get window from
-    #      :param: cut_site: The cut site
-    #      :return: windows_list: List of all windows - one per snp
-    #      """
-    #     snps = copy.deepcopy(self._snp_locus)
-    #     # TBD: ask zohar
-    #     # Excluding the SNP close to the cut-site
-    #     # window_for_elimination = [cut_site - self._distance_from_cut,
-    #     #                           cut_site + self._distance_from_cut]
-    #     # for i, snp_multi_loc in enumerate(snps):
-    #     #     if (snp_multi_loc >= window_for_elimination[0]) and (snp_multi_loc <= window_for_elimination[1]):
-    #     #         snps.pop(i)
-    #     # TBD add to log the ones that out
-    #
-    #     # create windows
-    #     windows_list = list()
-    #     for snp in snps:
-    #         temp_window = ref_read_for_window[snp - self._half_window_len:
-    #                                           snp + self._half_window_len + 1]
-    #         windows_list.append(temp_window)
-    #
-    #     # TBD: Zohar said not necessary!!!
-    #     # merging close SNPs to one phase
-    #     # i, j = 0, 0
-    #     # while j < len(snps):
-    #     #     j += 1
-    #     #     if j+1 > len(snps):
-    #     #         temp_window = ref_read_for_window[snps[j - 1] - self._half_window_len:
-    #     #                                             snps[j - 1] + self._half_window_len + 1]
-    #     #         windows_list.append(temp_window)
-    #     #     elif snps[i] + self._half_window_len > snps[j]:
-    #     #         continue
-    #     #     else:
-    #     #         i += 1
-    #     #         if i == j:
-    #     #             temp_window = ref_read_for_window[snps[i-1]-self._half_window_len :
-    #     #                                              snps[i-1]+self._half_window_len+1]
-    #     #             windows_list.append(temp_window)
-    #     #         else:
-    #     #             temp_window = ref_read_for_window[snps[i - 1] - self._half_window_len:
-    #     #                                                 snps[j] + self._half_window_len + 1]
-    #     #             windows_list.append(temp_window)
-    #
-    #     return windows_list
 
     def _mock_SNP_detection(self):
         """
@@ -621,20 +507,15 @@ class AlleleForMock:
                 self._nuc_distribution_before = self._norm_nuc_distribution(df_w_returned[['snp_phase', 'frequency']])
                 # get the number of alleles
                 _, _, _, self._number_of_alleles = self._get_num_alleles()
-
-                # allele_phases = list(self._nuc_distribution_before.keys())[:self._number_of_alleles]
                 self._windows = self._get_specific_windows(reference_read)
 
                 # assign alleles that are not represented to alleles that do
                 one_snp = False
                 if len(self._snp_locus) == 1:
                     one_snp = True
-                # df_complete, filtered_due_align_freq = self._determine_allele_for_unknowns(df_w_returned, df_dropped,
-                #                                                   windows_list_for_realignment, one_snp)
 
                 df_complete, filtered_due_align_freq = self._determine_allele_for_unknowns(df_w_returned, df_dropped,
                                                                                            one_snp)
-
                 final_reads_number = sum(df_complete['frequency'])
 
                 # normalizing again, after determine unknown reads' allele
@@ -645,26 +526,6 @@ class AlleleForMock:
                                              final_reads_number])
 
                 return df_complete, SNP
-
-                # # open a nucleotide window for future searching in tx reads
-                # ref_read_for_window = same_len_df['alignment_w_del'][0]
-                # # if there is only 1 snp in the df
-                # if len(self._snp_locus) == 1:
-                #     # TBD: Confirm with Zohar, for now - blocked
-                #     # window_for_elimination = [cut_site - self._distance_from_cut,
-                #     #                           cut_site + self._distance_from_cut]
-                #     # if (self._snp_locus[0] >= window_for_elimination[0]) and
-                #     #    (self._snp_locus[0] <= window_for_elimination[1]):
-                #     #     # TBD add to log the site
-                #     #     print('cannot be a site due to CUT')
-                #     #     return false_df, SNP
-                #     self._window = [ref_read_for_window[self._snp_locus[0] - self._half_window_len:
-                #                                         self._snp_locus[0] + self._half_window_len + 1]]
-                # # if multi-snp
-                # elif len(self._snp_locus) > 1:
-                #     self._window = self._get_window_for_multi_snp(ref_read_for_window, cut_site)
-                # else:
-                #     return false_df, SNP
 
             else:
                 return false_df, SNP
@@ -698,12 +559,6 @@ class AlleleForMock:
                         snp_type = allele_phases[best_index]
                         reads_with_no_alleles.at[i, 'snp_phase'] = snp_type
                     else:
-                        # # reshaping row and appending
-                        # row_to_append = pd.DataFrame(row.values.reshape(1, len(reads_with_no_alleles.columns))[0]).T
-                        # row_to_append.rename(index={0: i}, inplace=True)
-                        # row_to_append.columns = reads_with_no_alleles.columns
-                        # # raise a numpy.VisibleDeprecationWarning error. canceled it the error
-                        # reads_to_be_filtered = pd.concat([reads_to_be_filtered, row_to_append])
                         reads_to_be_filtered_list.append(row)
                         reads_with_no_alleles = reads_with_no_alleles.drop(i)
 
@@ -712,48 +567,6 @@ class AlleleForMock:
         reads_with_alleles = pd.concat([reads_with_alleles, reads_with_no_alleles])
 
         return reads_with_alleles, sum(reads_to_be_filtered['frequency'])
-
-    # def _determine_allele_for_unknowns(self, df_w_returned, df_dropped, windows_list_for_realignment, one_snp):
-    #     """
-    #     """
-    #     reads_to_be_filtered_list = list()
-    #     allele_phases = list(self._nuc_distribution_before.keys())[:self._number_of_alleles]
-    #     reads_with_alleles = df_w_returned[df_w_returned['snp_phase'].isin(allele_phases)]
-    #     reads_with_no_alleles = df_w_returned[~df_w_returned['snp_phase'].isin(allele_phases)]
-    #     if len(df_dropped) > 0:
-    #         reads_with_no_alleles = pd.concat([reads_with_no_alleles, df_dropped])
-    #     if one_snp:     # TBD: check if needed. Maybe redundant (966). It's NOT!!!
-    #         for i, row in reads_with_no_alleles.iterrows():
-    #             snp_type = random.choice(allele_phases)
-    #             reads_with_no_alleles.at[i, 'snp_phase'] = snp_type
-    #     else:
-    #         windows_list = self._prepare_windows_for_alignment(windows_list_for_realignment, allele_phases)
-    #         for i, row in reads_with_no_alleles.iterrows():
-    #             if len(row['snp_phase']) == 0:
-    #                 snp_type = random.choice(allele_phases)
-    #                 reads_with_no_alleles.at[i, 'snp_phase'] = snp_type
-    #             else:
-    #                 seq = row['alignment_w_del']
-    #                 # find the best allele to assign this read. return best index of allele list
-    #                 best_index, score, _, _ = best_index_wrapper(seq, windows_list, self._snp_locus)
-    #                 if score != None:
-    #                     snp_type = allele_phases[best_index]
-    #                     reads_with_no_alleles.at[i, 'snp_phase'] = snp_type
-    #                 else:
-    #                     # # reshaping row and appending
-    #                     # row_to_append = pd.DataFrame(row.values.reshape(1, len(reads_with_no_alleles.columns))[0]).T
-    #                     # row_to_append.rename(index={0: i}, inplace=True)
-    #                     # row_to_append.columns = reads_with_no_alleles.columns
-    #                     # # raise a numpy.VisibleDeprecationWarning error. canceled it the error
-    #                     # reads_to_be_filtered = pd.concat([reads_to_be_filtered, row_to_append])
-    #                     reads_to_be_filtered_list.append(row)
-    #                     reads_with_no_alleles = reads_with_no_alleles.drop(i)
-    #
-    #     # TBD: add to log the reads_to_be_filtered and output it as a file
-    #     reads_to_be_filtered = pd.DataFrame(data=reads_to_be_filtered_list, columns=df_w_returned.columns)
-    #     reads_with_alleles = pd.concat([reads_with_alleles, reads_with_no_alleles])
-    #
-    #     return reads_with_alleles, sum(reads_to_be_filtered['frequency'])
 
     def _prepare_windows_for_alignment(self, windows_list_for_realignment, allele_phases):
         windows_list = list()
@@ -796,10 +609,7 @@ class AlleleForTx:
         for tx_site_name, tx_site_df in self._tx_df.items():
             # TBD: DELETE start
             print(tx_site_name)
-            if tx_site_name == 'VEGFA1_5':
-                print('ok')
             # TBD: DELETE end
-
             # if tx site has an allele site
             if tx_site_name in self._sites_to_be_alleles:
                 temp_original_site_name = tx_site_name+'_Second'
@@ -810,15 +620,13 @@ class AlleleForTx:
                 tx_site_df['is_random'] = False
                 tx_site_df['is_filtered'] = False
                 tx_site_df['alignment_score'] = math.nan
-                # uncertain_reads = pd.DataFrame(columns=tx_site_df.columns)
-                # reads_to_be_filtered = pd.DataFrame(columns=tx_site_df.columns)
+
                 uncertain_reads_list = list()
                 reads_to_be_filtered_list = list()
                 # list of all relevant allele dfs for this site
                 list_sites_of_allele = self._new_alleles[tx_site_name]
                 windows = list()
                 new_sites_name = list()
-                # CTC_list = list()
                 SNP_loci = list_sites_of_allele[0][2]
                 # iterate over all possible alleles and add the window and the name of the allele site
                 for site_allele in list_sites_of_allele:
@@ -826,38 +634,19 @@ class AlleleForTx:
                     new_sites_name.append(site_allele[0])
 
                 # iterate over all rows in df and assign to relevant allele
-                i_list = ['GTCCTAATTTGGCCATCTGACTATGAATATGCTAACAAATGACAGGCTTAGCCTCCAGCATTTCCATTCCTTCCCAGGATGGGGTGGGGTGGGGTAGCACATTTAGAGCAATTAAAGGTCAATTCAAAACTCAGGTTTAGCAGGCTAGCCAGAGCCACAGGGTGATACGTGAGCCAGTTACTAGACTGGTTGATCTGATCACTCAATTCCTTCTGCC']  # TBD: DELETE
                 for i, row in tx_site_df.iterrows():
-                    if row['read'] in i_list:   # TBD: DELETE
-                        print('OK')
-                    # scores = dict() # TBD: delete
                     seq = row['alignment_w_del']
                     # find the best allele to assign this read. return best index of allele list
                     best_index, alignment_score, is_random, _ = best_index_wrapper(seq, windows, SNP_loci)
                     if alignment_score != None:
                         tx_site_df.loc[i, 'allele'] = new_sites_name[best_index]
-                        # alignment_score = self._get_alignment_score(best_index, scores) # TBD: delete
                         tx_site_df.loc[i, 'alignment_score'] = alignment_score
                         # TBD: delete or put in log - check the random assignment
                         if is_random:
-                            # # reshaping row and appending
-                            # row_to_append = pd.DataFrame(row.values.reshape(1, len(uncertain_reads.columns))[0]).T
-                            # row_to_append.rename(index={0: i}, inplace=True)
-                            # row_to_append.columns = uncertain_reads.columns
-                            # raise a numpy.VisibleDeprecationWarning error. canceled it the error
-                            # row_to_append.loc[i, 'alignment_score'] = alignment_score
                             row['alignment_score'] = alignment_score
                             tx_site_df.loc[i, 'is_random'] = True
-                            # uncertain_reads = pd.concat([uncertain_reads, row_to_append])
                             uncertain_reads_list.append(row)
                     else:
-                        # # reshaping row and appending
-                        # row_to_append = pd.DataFrame(row.values.reshape(1, len(reads_to_be_filtered.columns))[0]).T
-                        # row_to_append.rename(index={0: i}, inplace=True)
-                        # row_to_append.columns = reads_to_be_filtered.columns
-                        # raise a numpy.VisibleDeprecationWarning error. canceled it the error
-                        # row_to_append.loc[i, 'alignment_score'] = alignment_score
-                        # reads_to_be_filtered = pd.concat([reads_to_be_filtered, row_to_append])
                         reads_to_be_filtered_list.append(row)
                         tx_site_df.loc[i, 'is_filtered'] = True
                         # tx_site_df = tx_site_df.drop(i) # TBD: is it deleting it from the original site as well?
@@ -906,14 +695,6 @@ class AlleleForTx:
     ######### Private methods ########
     # -------------------------------#
 
-    # TBD: delete
-    # def _get_alignment_score(self, indx, scores):
-    #     sum_all = 0
-    #     for lst in scores.values():
-    #         sum_all += lst[indx]
-    #     return sum_all / len(scores)
-
-
 class ref_dfAlleleHandler:
     """
     Class to handle the creation of new ref_df with allele sites
@@ -932,9 +713,7 @@ class ref_dfAlleleHandler:
             for site_allele in sites_list:
                 new_site_name = site_allele[0]
                 new_amplicon = site_allele[4]
-                # SNP_window = site_allele[3]
-                # loci = site_allele[2]
-                # new_amplicon = self.create_new_amplicon(new_site_name,original_site_name,SNP_window,loci)
+
                 new_row_for_ref_df = self._ref_df[self._ref_df['Site Name'] == original_site_name]
                 new_row_for_ref_df = new_row_for_ref_df.rename(index={original_site_name: new_site_name})
                 new_row_for_ref_df.loc[new_site_name, 'AmpliconReference'] = new_amplicon
@@ -949,16 +728,6 @@ class ref_dfAlleleHandler:
     # -------------------------------#
     ######### Private methods #######
     # -------------------------------#
-
-    # TBD: delete
-    # def create_new_amplicon(self, new_site_name, original_site_name, SNP_window, loci):
-    #     curr_amplicon = str(self._ref_df[self._ref_df['Site Name'] == original_site_name]['AmpliconReference'][0])
-    #     SNP_locus, SNP_score = get_snp_locus_and_score(curr_amplicon, SNP_window)
-    #     new_amplicon = curr_amplicon[:SNP_locus] + new_site_name[-1] + curr_amplicon[SNP_locus + 1:]
-    #     '''TBD: print to be deleted'''
-    #     print(f'The gap between SNP and new SNP locus is: {loci} - {SNP_locus} = {loci - SNP_locus}')
-
-    # return new_amplicon
 
     def _get_PAM_site(self):
         """
@@ -1212,34 +981,6 @@ def best_index_wrapper(curr_amplicon, SNP_window_information, SNP_loci):
     return best_index, alignment_score, is_random, index_list
 
 
-# TBD: delete
-# def get_snp_locus_and_score(curr_amplicon, SNP_window_information, SNP_locus):
-#     SNP_window = SNP_window_information[0]
-#     CTC = SNP_window_information[1]
-#     add_nb_before = SNP_window_information[2]
-#     add_nb_after = SNP_window_information[3]
-#     smallest_gap = np.inf
-#     i_smallest = None
-#     searching_bounds = 30  # TBD: make util parameter
-#     half_window_len = 10  # TBD: make util parameter
-#     if SNP_locus - searching_bounds < 0:
-#         relevant_read = curr_amplicon[:searching_bounds * 2]
-#     elif SNP_locus + searching_bounds > len(curr_amplicon):
-#         relevant_read = curr_amplicon[-searching_bounds * 2:]
-#     else:
-#         relevant_read = curr_amplicon[SNP_locus - searching_bounds:SNP_locus + searching_bounds]
-#
-#     for i in range(len(relevant_read) - (len(SNP_window)) + 1):
-#         window = relevant_read[i: i + len(SNP_window)]
-#         curr_gap_score = count_diff(SNP_window, window)
-#         if curr_gap_score < smallest_gap:
-#             smallest_gap = curr_gap_score
-#             i_smallest = i
-#     # TBD CHANE: change 10 to self._half_window_len which will be in utils
-#     return i_smallest + half_window_len + add_nb_before - add_nb_after, smallest_gap
-
-
-# TBD: why not in use?
 def align_allele_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon_min_score):
     # set configuration and aligner for the alignment
     _cfg = Configurator.get_cfg()
@@ -1250,8 +991,6 @@ def align_allele_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon
 
     # iterate over each new allele and re-align it
     for site, site_allele in reads_df.items():
-        if site =='VEGFA1_5':
-            print('ok')
         for i in range(len(site_allele)):
             allele_name = site_allele[i][0]
             allele_df = site_allele[i][1]
@@ -1260,7 +999,8 @@ def align_allele_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon
             cut_site = ref_df.loc[allele_name, 'cut-site']
             ref_amplicon = ref_df.loc[allele_name, 'AmpliconReference']
 
-            new_allele_df = _aligner.align_reads(allele_df, ref_amplicon, cut_site, None, None, None, None, allele=True)
+            new_allele_df = _aligner.align_reads(allele_df, ref_amplicon, cut_site,
+                                                 None, None, allele_name, None, allele=True)
             new_sites[site][i][1] = new_allele_df
 
     return new_sites

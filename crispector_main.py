@@ -18,7 +18,7 @@ from utils.logger import LoggerWrapper
 from utils.configurator import Configurator
 from report.visualization_and_output import create_site_output, create_experiment_output
 # TBD: NEW import START
-from allele.allele import AlleleForMock, ref_dfAlleleHandler, AlleleForTx, align_allele_df
+from allele.allele2 import AlleleForMock, ref_dfAlleleHandler, AlleleForTx, align_allele_df
 import copy
 # NEW import END
 import os
@@ -131,31 +131,28 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         allele = True
 
         # finding alleles in each site in mock and insert to a new dictionary
-        mock_reads_d_allele = dict()
         allele_check = AlleleForMock((0.8, 0.2), ref_df)  # TBD: make as a hyperparameter
         for site_name in mock_reads_d.keys():
             print(site_name)  # TBD: delete
             df_allele = mock_reads_d[site_name]
-            mock_reads_d_allele = allele_check.run(site_name, df_allele)
+            allele_check.run(site_name, df_allele)
+        mock_reads_d_allele = allele_check.new_alleles
         reads_dropdown_mock_df = pd.DataFrame(data=allele_check.reads_drop_down,
                                               columns=['Site name', 'Original read count', 'Same length',
                                                        'With returned', 'Dropped only', 'filtered reads',
                                                        'final read count'])
         reads_dropdown_mock_df.to_csv(f'CRISPECTOR/reads_dropdown_mock_{guide_name_for_output}.csv')
 
-        # # if allele:
-        # #     mock_reads_d = mock_reads_d_allele
-
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/mock_reads_d_allele_multi', 'wb')
-        # pickle.dump(mock_reads_d_allele, outfile)
-        # outfile.close()
-        #
-        # outfile = open('pickle/df_mock_tx_snp_ratios_multi', 'wb')
-        # pickle.dump(allele_check.df_mock_tx_snp_ratios, outfile)
-        # outfile.close()
+        outfile = open('pickle/mock_reads_d_allele_multi', 'wb')
+        pickle.dump(mock_reads_d_allele, outfile)
+        outfile.close()
+
+        outfile = open('pickle/df_mock_tx_snp_ratios_multi', 'wb')
+        pickle.dump(allele_check.df_mock_tx_snp_ratios, outfile)
+        outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -179,16 +176,15 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         # assigning the new allele dfs to the original site dfs
         for key, site_lists in aligned_mock_reads_d_allele.items():
-            for site_allele in site_lists:
-                # site_allele[0] = site allele name || site_allele[1] = allele df
-                mock_reads_d[site_allele[0]] = site_allele[1]
+            for allele, allele_info in site_lists.items():
+                mock_reads_d[allele_info[0]] = allele_info[1]
 
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/mock_reads_d_final_multi', 'wb')
-        # pickle.dump(mock_reads_d, outfile)
-        # outfile.close()
+        outfile = open('pickle/mock_reads_d_final_multi', 'wb')
+        pickle.dump(mock_reads_d, outfile)
+        outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -199,16 +195,15 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
 
         # treat all the treatment as for alleles
-        tx_allele_df_initializer = AlleleForTx(tx_reads_d, mock_reads_d_allele)
-        tx_reads_d_allele, original_sites, sites_score, ratios_df = \
-            tx_allele_df_initializer.run(allele_check.df_mock_tx_snp_ratios)
-
+        tx_allele_df_initializer = AlleleForTx(tx_reads_d, mock_reads_d_allele, allele_check.alleles_ref_reads)
+        tx_reads_d_allele, original_sites, sites_score, ratios_df = tx_allele_df_initializer.run(
+                                                                    allele_check.df_mock_tx_snp_ratios)
         # TBD: check ratios gaps between mock to tx
         # TBD DELETE
         uncertain = tx_allele_df_initializer.uncertain_reads
         reads_dropdown_tx = tx_allele_df_initializer.reads_dropdown
-        reads_dropdown_tx_df = pd.DataFrame(data=reads_dropdown_tx, columns=['Site name', 'Original read count',
-                                                                             'filtered count', 'uncertain count'])
+        reads_dropdown_tx_df = pd.DataFrame(data=reads_dropdown_tx, columns=['Site name', 'Original read count'
+                                                                             , 'uncertain count'])
         reads_dropdown_tx_df.to_csv(f'CRISPECTOR/reads_dropdown_tx_{guide_name_for_output}.csv')
         ratios_df.to_csv(f'CRISPECTOR/ratios_df_{guide_name_for_output}.csv')
         ##############################################################################################
@@ -236,10 +231,10 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         if allele:
             for key, site_lists in aligned_tx_reads_d_allele.items():
-                for site_allele in site_lists:
-                    tx_reads_d[site_allele[0]] = site_allele[1]
+                for allele, allele_info in site_lists.items():
+                    tx_reads_d[allele_info[0]] = allele_info[1]
 
-        # TBD: New addition. With additional columns (is_filtered and is_random)
+        # TBD: New addition. With additional columns (is_filtered and is_random) NOT necessarily needed. CHECK IT OUT
         site_names = list(tx_reads_d.keys())
         for original_site_name, original_site_df in original_sites.items():
             if original_site_name in site_names:
@@ -304,10 +299,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
 
         tables_d: Dict[str, ModificationTables] = dict()
         for site, row in allele_ref_df.iterrows():
-            # TBD: DELETE
-            print(site)
-            if site == 'VEGFA1_5_[64, 65, 66]_TTC':
-                print(site)
             tx_reads_num = tx_reads_d[site][FREQ].sum().astype(int)
             mock_reads_num = mock_reads_d[site][FREQ].sum().astype(int)
             if donor and row[ON_TARGET]:
@@ -379,8 +370,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         for site_name, site_edited_df in temp_dict_for_checking_edits.items():
             if 'is_random' in site_edited_df.columns:
                 random_true = set(list(site_edited_df['is_random']))
-                filter_true = set(list(site_edited_df['is_filtered']))
-                if (True in random_true) or (True in filter_true):
+                if True in random_true:
                     site_edited_df.to_csv(f'CRISPECTOR/{site_name}.csv')
         # TBD: delete END
         # Convert result_summary dict to DataFrame

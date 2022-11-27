@@ -232,10 +232,6 @@ class Alignment:
 
         new_cols_d = defaultdict(list)
         for row_idx, row in reads.iterrows():
-            # Original: read=row[READ]
-            # Test: read=read while read = row['alignment_w_del']
-            # TBD: Added if-else statement. Maybe delete after test.
-
             ref_w_ins, read_w_del, cigar, c_len, score = self.needle_wunsch_align(
                 reference=reference, read=row[READ])
             # compute both directions of alignment
