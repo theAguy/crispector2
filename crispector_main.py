@@ -81,7 +81,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                                            fastp_options_string, keep_intermediate_files, max_edit_distance_on_primers)
 
         # process input: TBD - return
-        # tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
+        tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
 
         # get alleles from mock
         ''' NEW !!!! : START '''
@@ -89,41 +89,41 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/tx_trans_df', 'wb')
-        # pickle.dump(tx_trans_df, outfile)
-        # outfile.close()
-        #
-        # outfile = open('pickle/mock_trans_df', 'wb')
-        # pickle.dump(mock_trans_df, outfile)
-        # outfile.close()
-        #
-        # outfile = open('pickle/mock_reads_d_original', 'wb')
-        # pickle.dump(mock_reads_d, outfile)
-        # outfile.close()
-        #
-        # outfile = open('pickle/tx_reads_d_original', 'wb')
-        # pickle.dump(tx_reads_d, outfile)
-        # outfile.close()
+        outfile = open('pickle/tx_trans_df', 'wb')
+        pickle.dump(tx_trans_df, outfile)
+        outfile.close()
+
+        outfile = open('pickle/mock_trans_df', 'wb')
+        pickle.dump(mock_trans_df, outfile)
+        outfile.close()
+
+        outfile = open('pickle/mock_reads_d_original', 'wb')
+        pickle.dump(mock_reads_d, outfile)
+        outfile.close()
+
+        outfile = open('pickle/tx_reads_d_original', 'wb')
+        pickle.dump(tx_reads_d, outfile)
+        outfile.close()
 
         ##############################################################################################
         # INFILE
         ##############################################################################################
 
-        infile = open('pickle/tx_trans_df', 'rb')
-        tx_trans_df = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/mock_trans_df', 'rb')
-        mock_trans_df = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/mock_reads_d_original', 'rb')
-        mock_reads_d = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/tx_reads_d_original', 'rb')
-        tx_reads_d = pickle.load(infile)
-        infile.close()
+        # infile = open('pickle/tx_trans_df', 'rb')
+        # tx_trans_df = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/mock_trans_df', 'rb')
+        # mock_trans_df = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/mock_reads_d_original', 'rb')
+        # mock_reads_d = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/tx_reads_d_original', 'rb')
+        # tx_reads_d = pickle.load(infile)
+        # infile.close()
 
         ##############################################################################################
         ##############################################################################################
@@ -209,9 +209,9 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/tx_reads_d_allele', 'wb')
-        # pickle.dump(tx_reads_d_allele, outfile)
-        # outfile.close()
+        outfile = open('pickle/tx_reads_d_allele', 'wb')
+        pickle.dump(tx_reads_d_allele, outfile)
+        outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -243,13 +243,13 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/aligned_tx_reads_d_allele', 'wb')
-        # pickle.dump(aligned_tx_reads_d_allele, outfile)
-        # outfile.close()
-        #
-        # outfile = open('pickle/tx_reads_d_final', 'wb')
-        # pickle.dump(tx_reads_d, outfile)
-        # outfile.close()
+        outfile = open('pickle/aligned_tx_reads_d_allele', 'wb')
+        pickle.dump(aligned_tx_reads_d_allele, outfile)
+        outfile.close()
+
+        outfile = open('pickle/tx_reads_d_final', 'wb')
+        pickle.dump(tx_reads_d, outfile)
+        outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -276,9 +276,9 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/allele_ref_df', 'wb')
-        # pickle.dump(aligned_tx_reads_d_allele, outfile)
-        # outfile.close()
+        outfile = open('pickle/allele_ref_df', 'wb')
+        pickle.dump(aligned_tx_reads_d_allele, outfile)
+        outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
