@@ -68,6 +68,15 @@ class ModificationTables:
     def amplicon(self) -> DNASeq:
         return self._amplicon
 
+    # setters
+    @tx_reads.setter
+    def tx_reads(self, value):
+        self._tx_reads = value
+
+    @mock_reads.setter
+    def mock_reads(self, value):
+        self._mock_reads = value
+
     def _create_modification_tables_and_distribution(self):
         """
         Function create modification tables and pointers to ReadsDf for all modification types.

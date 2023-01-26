@@ -141,6 +141,12 @@ class CoreAlgorithm:
         result_d[EDIT_PERCENT] = 100*editing_activity
         result_d[CI_LOW] = 100*CI_low
         result_d[CI_HIGH] = 100*CI_high
+        # TBD: new: make until
+        try:
+            result_d['Random edited reads'] = self._tx_df.loc[(self._tx_df['is_random'] == True) &
+                                                              (self._tx_df['is_edited'] == True), 'frequency'].sum()
+        except:
+            result_d['Random edited reads'] = 0
         return result_d
 
     def _compute_confidence_interval(self, editing_activity: Pr) -> Tuple[Pr, Pr]:

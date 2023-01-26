@@ -7,6 +7,7 @@ import random
 from input_processing.alignment import Alignment
 from utils.configurator import Configurator
 from Bio import Align
+from scipy.stats import norm
 
 
 class AlleleForMock:
@@ -15,7 +16,7 @@ class AlleleForMock:
     """
 
     def __init__(self, ratios, ref_df):
-        self.reads_drop_down = list()
+        # self.reads_drop_down = list()
         self._ref_df = ref_df
         self._ratios = ratios  # TBD: make as a util parameter
         self.new_alleles = dict()
@@ -446,7 +447,6 @@ class AlleleForMock:
         # TBD: make hyperparameter
         return math.pow(_coverage, 1 / 10) * math.pow(_entropy, 9 / 10)
 
-
     def _mock_SNP_detection(self):
         """
         Find all snps and return df with the snp bases
@@ -494,7 +494,8 @@ class AlleleForMock:
                 same_len_freq = sum(same_len_df['frequency'])
                 same_len_indexes = list(same_len_df.index)
                 # handle reads that are not at length of the self._consensus length
-                reference_read = same_len_df.loc[same_len_indexes[list(same_len_df['frequency']).index(max(same_len_df['frequency']))],'alignment_w_del']
+                reference_read = same_len_df.loc[same_len_indexes[list(same_len_df['frequency']).index(
+                    max(same_len_df['frequency']))], 'alignment_w_del']
                 windows_list_for_realignment = self._get_general_windows(reference_read)
                 df_w_returned, df_dropped = self._return_reads_to_nuc_dist(
                     same_len_df, filtered_reads_diff_len, windows_list_for_realignment)
@@ -519,16 +520,16 @@ class AlleleForMock:
                 if len(self._snp_locus) == 1:
                     one_snp = True
 
-                df_complete, filtered_due_align_freq = self._determine_allele_for_unknowns(df_w_returned, df_dropped,
-                                                                                           one_snp)
-                final_reads_number = sum(df_complete['frequency'])
+                df_complete = self._determine_allele_for_unknowns(df_w_returned, df_dropped, one_snp)
+                # filtered_due_align_freq
+                # final_reads_number = sum(df_complete['frequency'])
 
                 # normalizing again, after determine unknown reads' allele
                 self._nuc_distribution_after = self._norm_nuc_distribution(df_complete[['snp_phase', 'frequency']])
 
-                self.reads_drop_down.append([self._site_name, original_instances_number, same_len_freq,
-                                             df_w_returned_freq, df_dropped_freq, filtered_due_align_freq,
-                                             final_reads_number])
+                # self.reads_drop_down.append([self._site_name, original_instances_number, same_len_freq,
+                #                              df_w_returned_freq, df_dropped_freq, filtered_due_align_freq,
+                #                              final_reads_number])
                 return df_complete, SNP
 
             else:
@@ -540,37 +541,49 @@ class AlleleForMock:
         """
         """
         allele_phases = list(self._windows.keys())
-        reads_to_be_filtered_list = list()
+        # reads_to_be_filtered_list = list()
         reads_with_alleles = df_w_returned[df_w_returned['snp_phase'].isin(allele_phases)]
         reads_with_no_alleles = df_w_returned[~df_w_returned['snp_phase'].isin(allele_phases)]
+        reads_with_alleles = reads_with_alleles.assign(is_random=False)
+        reads_with_no_alleles = reads_with_no_alleles.assign(is_random=False)
         if len(df_dropped) > 0:
             reads_with_no_alleles = pd.concat([reads_with_no_alleles, df_dropped])
-        if one_snp:     # TBD: check if needed. Maybe redundant (966). It's NOT!!!
+        # if only one snp, then it has to be random
+        if one_snp:  # TBD: check if needed. Maybe redundant (966). It's NOT!!!
             for i, row in reads_with_no_alleles.iterrows():
                 snp_type = random.choice(allele_phases)
                 reads_with_no_alleles.at[i, 'snp_phase'] = snp_type
+                reads_with_no_alleles.at[i, 'is_random'] = True
         else:
             windows_list = list(self._windows.values())
             for i, row in reads_with_no_alleles.iterrows():
+                # if did not find any snps = meaning that there is no chance of finding "best alignment" - random
                 if len(row['snp_phase']) == 0:
                     snp_type = random.choice(allele_phases)
                     reads_with_no_alleles.at[i, 'snp_phase'] = snp_type
+                    reads_with_no_alleles.at[i, 'is_random'] = True
                 else:
                     seq = row['alignment_w_del']
                     # find the best allele to assign this read. return best index of allele list
                     best_index, score, _, _ = best_index_wrapper(seq, windows_list, self._snp_locus)
+                    # if there is better alignment between the alleles - set it
                     if score != None:
                         snp_type = allele_phases[best_index]
                         reads_with_no_alleles.at[i, 'snp_phase'] = snp_type
+                    # else - random assignment
                     else:
-                        reads_to_be_filtered_list.append(row)
-                        reads_with_no_alleles = reads_with_no_alleles.drop(i)
+                        snp_type = random.choice(allele_phases)
+                        reads_with_no_alleles.at[i, 'snp_phase'] = snp_type
+                        reads_with_no_alleles.at[i, 'is_random'] = True
+                        # reads_to_be_filtered_list.append(row)
+                        # reads_with_no_alleles = reads_with_no_alleles.drop(i)
 
         # TBD: add to log the reads_to_be_filtered and output it as a file
-        reads_to_be_filtered = pd.DataFrame(data=reads_to_be_filtered_list, columns=df_w_returned.columns)
+        # reads_to_be_filtered = pd.DataFrame(data=reads_to_be_filtered_list, columns=df_w_returned.columns)
         reads_with_alleles = pd.concat([reads_with_alleles, reads_with_no_alleles])
 
-        return reads_with_alleles, sum(reads_to_be_filtered['frequency'])
+        return reads_with_alleles\
+            # , sum(reads_to_be_filtered['frequency'])
 
     def _prepare_windows_for_alignment(self, windows_list_for_realignment, allele_phases):
         windows_list = list()
@@ -651,7 +664,8 @@ class AlleleForTx:
                             j = 0
                             while j < max_len:
                                 if (matches[j] == '-') and (ref_aligned[j] == '-') and (read_aligned[j] == '-'):
-                                    long_del, counter = self._is_long_del(matches, j, list_sites_of_allele[allele_type][2])
+                                    long_del, counter = self._is_long_del(matches, j,
+                                                                          list_sites_of_allele[allele_type][2])
                                     if not long_del:
                                         alignment_score += local_aligner.match
                                         j += 1
@@ -689,9 +703,10 @@ class AlleleForTx:
                     avg_score = tx_site_df_temp['alignment_score'].mean(axis=0, skipna=True)
                     self._sites_score = self._sites_score.append({'site_name': allele_info[0], 'avg_score': avg_score},
                                                                  ignore_index=True)
-                    tx_site_df_temp = tx_site_df_temp.drop(labels=['allele', 'alignment_score'], axis=1)  # TBD: maybe i should add 'is_random'
+                    tx_site_df_temp = tx_site_df_temp.drop(labels=['allele', 'alignment_score'],
+                                                           axis=1)  # TBD: maybe i should add 'is_random'
                     self._new_tx_df[tx_site_name][allele_type] = [allele_info[0], tx_site_df_temp]
-                original_sites[tx_site_name] = tx_site_df   # TBD: maybe delete
+                original_sites[tx_site_name] = tx_site_df  # TBD: maybe delete
                 # TBD: insert to log: Maybe delete
                 self.uncertain_reads[tx_site_name] = uncertain_reads
 
@@ -724,6 +739,7 @@ class AlleleForTx:
         else:
             return False, counter
 
+
 class ref_dfAlleleHandler:
     """
     Class to handle the creation of new ref_df with allele sites
@@ -747,7 +763,8 @@ class ref_dfAlleleHandler:
                 new_row_for_ref_df = new_row_for_ref_df.rename(index={original_site_name: new_site_name})
                 new_row_for_ref_df.loc[new_site_name, 'AmpliconReference'] = new_amplicon
                 new_row_for_ref_df.loc[new_site_name, 'Site Name'] = new_site_name
-                self._ref_df = pd.concat([self._ref_df, new_row_for_ref_df])    # TBD: maybe replace concat with append to list like I did in previous cases
+                self._ref_df = pd.concat([self._ref_df,
+                                          new_row_for_ref_df])  # TBD: maybe replace concat with append to list like I did in previous cases
         '''add PAM coordinates and gRNA coordinates to df'''
         # TBD: WHY to get the PAM?? cannot remember
         self._get_PAM_site()
@@ -919,7 +936,7 @@ def determine_best_idx(curr_amplicon, SNP_window_information, SNP_loci, CTC_list
     # else - if there are several "best index":
     else:
         # if it is only one snp
-        if len(scores) == 1:    # TBD: check if needed. Maybe redundant (582) No it's not. important for Tx
+        if len(scores) == 1:  # TBD: check if needed. Maybe redundant (582) No it's not. important for Tx
             is_random = True
             best_index = random.choice(index_list[0])
             alignment_score = np.mean(scores, axis=0)[best_index]
@@ -953,7 +970,8 @@ def determine_best_idx(curr_amplicon, SNP_window_information, SNP_loci, CTC_list
                         CTC_alignment = True
                         # consider all snps CTC and calculate from the beginning the scores
                         new_CTC_list = [True] * len(CTC_list)
-                        scores_new = calc_alignments_scores(curr_amplicon, SNP_window_information, SNP_loci, new_CTC_list)
+                        scores_new = calc_alignments_scores(curr_amplicon, SNP_window_information, SNP_loci,
+                                                            new_CTC_list)
                         # scores = [x for i, x in enumerate(scores_new) if i in new_best_indexes]
                         scores = np.array(scores_new)[:, new_best_indexes]
                         new_sums = np.sum(scores, axis=0)
@@ -1001,7 +1019,7 @@ def best_index_wrapper(curr_amplicon, SNP_window_information, SNP_loci):
     :return: df: the best index of allele to be set, alignment score, if it was picked by random, the whole list
     """
     # add to list the True/False for each CTC window
-    CTC_list = list()       # TBD: put CTC into a function outside here and outside every row iteration
+    CTC_list = list()  # TBD: put CTC into a function outside here and outside every row iteration
     for window_info in SNP_window_information[0]:
         CTC_list.append(window_info[1])
     scores = calc_alignments_scores(curr_amplicon, SNP_window_information, SNP_loci, CTC_list)
@@ -1011,6 +1029,15 @@ def best_index_wrapper(curr_amplicon, SNP_window_information, SNP_loci):
 
 
 def align_allele_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon_min_score):
+    """
+    align df of allele to the new allele reference
+    :param: reads_df: The allele site DataFrames
+    :param: ref_df: the reference DateFrame
+    :param: amplicon_min_score: minimum score for alignment to the amplicon
+    :param: translocation_amplicon_min_score: minimum score fir translocation
+    :return: new_sites: returns all allele sites aligned to their amplicons
+    """
+
     # set configuration and aligner for the alignment
     _cfg = Configurator.get_cfg()
     _aligner = Alignment(_cfg["alignment"], amplicon_min_score, translocation_amplicon_min_score,
@@ -1034,3 +1061,99 @@ def align_allele_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon
             new_sites[site][allele][1] = new_allele_df
 
     return new_sites
+
+
+# for overlapping interval calculation
+
+class Interval:
+    """
+    class to handle intervals of CI of results summary
+    """
+
+    def __init__(self, interval):
+        self.start = interval[0]
+        self.end = interval[1]
+
+
+def is_intersect(arr):
+    """
+    function that returns True if some intervals are intersects and False if all not intersects.
+    :param: arr: array of intervals
+    :return: bool: True / False intersection of intervals
+    """
+    n = len(arr)
+    arr.sort(key=lambda x: x.start)
+    # In the sorted array, if the start of an interval is less than end of previous one - there is an overlap
+    for i in range(1, n):
+        if arr[i - 1].end > arr[i].start:
+            return True
+    # Else - no overlap
+    return False
+
+
+def _compute_confidence_interval(editing_activity, n_reads_tx, confidence_interval):
+    """
+    Compute confidence interval and returns low & high CI boundary
+    :param editing_activity: the calculated editing activity
+    :param n_reads_tx: number of treatment reads
+    :param confidence_interval: the confidence interval parameter
+    :return: Tuple of low & high CI boundary
+    """
+    confidence_inv = norm.ppf(confidence_interval + (1 - confidence_interval) / 2)
+    half_len_CI = confidence_inv * np.sqrt((editing_activity * (1 - editing_activity)) / n_reads_tx)
+    return max(0, editing_activity - half_len_CI), editing_activity + half_len_CI
+
+
+def compute_new_statistics_based_on_random_assignment(original_n_reads_tx, original_n_reads_edited, allele_random,
+                                                      sum_all, confidence_interval):
+    """
+    compute new high and low CI, where for high we are taking into consideration all random reads, and for low none
+    :param original_n_reads_tx: the original number of treatment reads
+    :param original_n_reads_edited: the original number of edited treatment reads
+    :param allele_random: number of random edited reads of the specific site
+    :param sum_all: sum of all random edited reads from all alleles of the same site
+    :param confidence_interval: the confidence interval parameter
+    :return: array of [low_CI, high_CI]
+    """
+    # high_confidence - consider all random edited reads from both alleles
+    n_reads_tx_high_CI = original_n_reads_tx + sum_all - allele_random
+    n_reads_edited_high_CI = original_n_reads_edited + sum_all - allele_random
+    editing_activity_high_CI = (n_reads_edited_high_CI / n_reads_tx_high_CI)
+    _, CI_high = _compute_confidence_interval(editing_activity_high_CI, n_reads_tx_high_CI, confidence_interval)
+    # low_confidence - subtract random edited reads
+    n_reads_tx_low_CI = original_n_reads_tx - allele_random
+    n_reads_edited_low_CI = original_n_reads_edited - allele_random
+    editing_activity_low_CI = n_reads_edited_low_CI / n_reads_tx_low_CI
+    CI_low, _ = _compute_confidence_interval(editing_activity_low_CI, n_reads_tx_low_CI, confidence_interval)
+
+    return [CI_low * 100, CI_high * 100]
+
+
+def return_for_re_run_sites(dict_of_alleles, confidence_interval):
+    """
+    function that checks if site has alleles that CI-overlap after manipulation of:
+        high_CI = all random edited reads assign to an allele
+        low_CI = none random edited reads assign to an allele
+    :param dict_of_alleles: dictionary of all alleles
+    :param confidence_interval: the confidence interval parameter
+    :return: True if the alleles of a site are overlapping, and False if not
+    """
+    # TBD: make all names according to util
+    new_alleles_CI = list()
+    try:
+        sum_randoms = sum(allele['Random edited reads'] for allele in dict_of_alleles.values())
+    except:
+        # read count per allele is too low that there is no statistics for it
+        return False
+
+    for allele in dict_of_alleles.values():
+        n_allele_random = allele['Random edited reads']
+        n_reads_tx = allele['Treatment number of reads']
+        n_reads_edited = allele['Edited reads']
+        new_allele = compute_new_statistics_based_on_random_assignment(n_reads_tx, n_reads_edited,
+                                                                       n_allele_random, sum_randoms,
+                                                                       confidence_interval)
+        new_alleles_CI.append(Interval(new_allele))
+    if is_intersect(new_alleles_CI):
+        return True
+    return False

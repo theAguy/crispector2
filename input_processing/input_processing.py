@@ -290,7 +290,7 @@ class InputProcessing:
         return merged_path, reads_in_input_num, merged_reads_num
 
     ######### Demultiplex ###########
-    def _demultiplex_reads(self, merged_fastq: Path, exp_type: ExpType) -> Tuple[ReadsDf, TransDf]:
+    def l_demultiplex_reads(self, merged_fastq: Path, exp_type: ExpType) -> Tuple[ReadsDf, TransDf]:
         """
         Demultiplex reads using edit distance on primers.
         For ambiguous matching - search for correct matching or translocation by full alignment
