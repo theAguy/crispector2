@@ -1,7 +1,10 @@
 import pandas as pd
 import numpy as np
 import copy
+import os
 import statistics
+from scipy.spatial import distance
+import matplotlib.pyplot as plt
 from typing import Dict
 from algorithm.binomial_probability import compute_binom_p
 from algorithm.core_algorithm import CoreAlgorithm
@@ -135,14 +138,15 @@ def compute_best_stats(enable_substitutions, confidence_interval, donor, min_num
     :return: The new dfs of the alleles and the new statistics scores
     """
 
+    tx_reads_d = dict()
+    mock_reads_d = dict()
+
+    allele_sites = list()
+
     # create tx_reads_d and mock_reads_d
     for site, alleles in re_run_overlapping_sites.items():
-        allele_sites = list()
         for allele_name, allele_info in alleles.items():
             allele_sites.append(allele_info[0])
-
-        tx_reads_d = dict()
-        mock_reads_d = dict()
 
         for allele in allele_sites:
             tx_reads_d[allele] = dfs_data[allele].tx_reads.reset_index()
@@ -221,12 +225,67 @@ def re_align_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon_min
     return new_sites
 
 
-def get_best_random_reads_assignment(enable_substitutions, confidence_interval, donor, min_num_of_reads,
+def get_medoid(d, sites_linkage, outdir):
+    """
+    function that takes all iterations of summary results and select the medoid of the data with respect to
+    each site's alleles
+    :param d: the dictionary with all statistics results of all iterations
+    :param sites_linkage: a key-value of all sites and their alleles
+    :param outdir: path of out directory
+    :return: The medoid of the results. medoid per site (same alleles in the site would get same medoid)
+    """
+
+    best_index_per_allele = dict()
+
+    for site, alleles in sites_linkage.items():
+        # get all results as data points in the dimension of number of alleles
+        data_points = list()
+        for indx, results in enumerate(d):
+            sub_point = list()
+            for allele_name in alleles:
+                editing_activity = results[allele_name]['Editing Activity']
+                sub_point.append(editing_activity)
+            data_points.append(sub_point)
+
+        # creating an empty distances matrix
+        dict_len = len(d)
+        dist_matrix = np.empty(shape=(dict_len, dict_len), dtype='object')
+
+        # calculate each pairwise euclidean distance
+        for i, fix_point in enumerate(data_points):
+            for j, var_point in enumerate(data_points):
+                dist_matrix[i, j] = distance.euclidean(fix_point, var_point)
+
+        # get the smallest aggregated distance as the medoid and as the selected point.
+        medoid = np.argmin(dist_matrix.sum(axis=0))
+
+        for allele_name in alleles:
+            best_index_per_allele[allele_name] = medoid
+
+        # plotting the data points
+        if len(alleles) == 2:
+            x = [row[0] for row in data_points]
+            y = [row[1] for row in data_points]
+            label = [idx for idx in range(len(data_points))]
+            plt.scatter(x, y)
+
+            for i, txt in enumerate(label):
+                plt.annotate(txt, (x[i], y[i]))
+            plt.title(f'The medoid of site {site} is: {medoid}')
+            plt.savefig(os.path.join(outdir, f'medoid_{site}.png'), box_inches='tight')
+            plt.close()
+            plt.clf()
+
+    return best_index_per_allele
+
+
+def get_best_random_reads_assignment(outdir, enable_substitutions, confidence_interval, donor, min_num_of_reads,
                                      override_noise_estimation, allele_ref_df, dfs_data, re_run_overlapping_sites,
                                      amplicon_min_score, translocation_amplicon_min_score):
     """
     function that takes all ambiguous sites (regarding CI), re-assign the random reads to the alleles and re-compute
     the statistics. This done 11 times, taking the median score of each site as the "best" score
+    :param outdir: path of out directory
     :param enable_substitutions: Flag
     :param confidence_interval: the confidence interval parameter
     :param donor: is donor experiment flag
@@ -240,44 +299,52 @@ def get_best_random_reads_assignment(enable_substitutions, confidence_interval, 
     :return: The best selected statistics and dfs out of 11 random possibles
     """
     # take out from mock and treatment dfs all the "random reads" and store them separately
-    random_tables_d, random_mock_dict, random_tx_dict, link_site_allele = \
+    tables_d_wo_random, random_mock_dict, random_tx_dict, link_site_allele = \
         create_random_reads_df_per_site(dfs_data, re_run_overlapping_sites)
 
     tables_d_dict = list()
     result_summary_d_dict = list()
     for i in range(11):
         # assign "random reads" randomly between sites
-        tables_d_random = random_assign_random_reads_to_dfs(random_tables_d, random_tx_dict, random_mock_dict,
-                                                            link_site_allele)
+        tables_d_w_random = random_assign_random_reads_to_dfs(tables_d_wo_random, random_tx_dict, random_mock_dict,
+                                                              link_site_allele)
 
         # compute new statistics per each site that was modified randomly
         tables_d_allele, result_summary_d_allele = compute_best_stats(enable_substitutions, confidence_interval, donor,
                                                                       min_num_of_reads, override_noise_estimation,
-                                                                      allele_ref_df, tables_d_random,
+                                                                      allele_ref_df, tables_d_w_random,
                                                                       re_run_overlapping_sites, amplicon_min_score,
                                                                       translocation_amplicon_min_score)
         # store the dfs and the statistics results
         tables_d_dict.append(tables_d_allele)
         result_summary_d_dict.append(result_summary_d_allele)
 
-    best_tables_d = dict()
-    best_results_summary = dict()
-
-    # get the median editing activity of each score
-    all_ee_results = dict()
-    for result in result_summary_d_dict:
-        for site_name, site_info in result.items():
-            if site_name in all_ee_results.keys():
-                all_ee_results[site_name].append(site_info['Editing Activity'])
-            else:
-                all_ee_results[site_name] = [site_info['Editing Activity']]
+    # calculate the medoid of each site to set as the best result
+    best_index_per_allele = get_medoid(result_summary_d_dict, link_site_allele, outdir)
 
     # assign the "best score" into new dictionaries
-    for site, ee_results in all_ee_results.items():
-        median = statistics.median(ee_results)
-        median_index = ee_results.index(median)
+    best_tables_d = dict()
+    best_results_summary = dict()
+    for allele, medoid_index in best_index_per_allele.items():
+        best_tables_d[allele] = tables_d_dict[medoid_index][allele]
+        best_results_summary[allele] = result_summary_d_dict[medoid_index][allele]
 
-        best_tables_d[site] = tables_d_dict[median_index][site]
-        best_results_summary[site] = result_summary_d_dict[median_index][site]
+    # TBD: DELETE
+    # # get the median editing activity of each score
+    # all_ee_results = dict()
+    # for result in result_summary_d_dict:
+    #     for site_name, site_info in result.items():
+    #         if site_name in all_ee_results.keys():
+    #             all_ee_results[site_name].append(site_info['Editing Activity'])
+    #         else:
+    #             all_ee_results[site_name] = [site_info['Editing Activity']]
+
+    # # assign the "best score" into new dictionaries
+    # for site, ee_results in all_ee_results.items():
+    #     median = statistics.median(ee_results)
+    #     median_index = ee_results.index(median)
+    #
+    #     best_tables_d[site] = tables_d_dict[median_index][site]
+    #     best_results_summary[site] = result_summary_d_dict[median_index][site]
 
     return best_tables_d, best_results_summary

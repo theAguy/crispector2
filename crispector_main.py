@@ -385,24 +385,27 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                 re_run_overlapping_sites[site] = alleles
 
         # find the best statistics for the overlapping sites
-        new_tables_d, best_stats_per_site = get_best_random_reads_assignment(enable_substitutions, confidence_interval,
-                                                                             donor, min_num_of_reads,
-                                                                             override_noise_estimation, allele_ref_df,
-                                                                             tables_d, re_run_overlapping_sites,
-                                                                             amplicon_min_score,
-                                                                             translocation_amplicon_min_score)
+        if len(re_run_overlapping_sites) > 0:
+            new_tables_d, best_stats_per_site = get_best_random_reads_assignment(output, enable_substitutions,
+                                                                                 confidence_interval, donor,
+                                                                                 min_num_of_reads,
+                                                                                 override_noise_estimation,
+                                                                                 allele_ref_df, tables_d,
+                                                                                 re_run_overlapping_sites,
+                                                                                 amplicon_min_score,
+                                                                                 translocation_amplicon_min_score)
 
-        # TBD: important note - it might that not all reads would appear in the new alleles
-        # this is because if the median of the allele sites are sharing the same reads, thus some won't appear
-        # To be discussed with Zohar
+            # TBD: important note - it might that not all reads would appear in the new alleles
+            # this is because if the median of the allele sites are sharing the same reads, thus some won't appear
+            # To be discussed with Zohar
 
-        for site, site_result in best_stats_per_site.items():
-            result_summary_d[site] = site_result
+            for site, site_result in best_stats_per_site.items():
+                result_summary_d[site] = site_result
 
-        for site, mod_info in new_tables_d.items():
-            tables_d[site] = mod_info
+            for site, mod_info in new_tables_d.items():
+                tables_d[site] = mod_info
 
-        # NEW END
+            # NEW END
 
         # TBD: delete START
         # for site_name, site_edited_df in temp_dict_for_checking_edits.items():
