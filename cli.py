@@ -77,6 +77,18 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'], max_content_width=12
               help="Keep intermediate files for debug purposes")
 @click.option('--verbose', is_flag=True, default=False, show_default=True,
               help="Higher verbosity")
+@click.option("--snv_ratio", type=click.STRING, default="(0.8,0.2)", show_default=True,
+              help="For a single position along single amplicon's data reads, "
+                   "if the entropy of the ratio is lower than the given ratio, "
+                   "don't count this position as potential snv. Has to be tuple that sums to 1")
+@click.option("--max_potential_snvs", type=click.INT, default=5, show_default=True,
+              help="Maximum possible SNVs that may be occur in the experiment. Above that - certainly noise.")
+@click.option("--max_allele_mismatches", type=click.INT, default=5, show_default=True,
+              help="maximum mismatches allowed when aligning guide to amplicon (both mock and tx) in the allelic case")
+@click.option("--max_len_snv_ctc", type=click.INT, default=10, show_default=True,
+              help="maximum length from cut site to snv that consider to be close to cut-site (ctc)")
+
+
 def main(**kwargs):
     """Accurate estimation of genome editing translocation and NHEJ off-target activity from comparative NGS data"""
     kwargs["command_used"] = ' '.join(sys.argv)

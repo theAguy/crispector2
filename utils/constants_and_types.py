@@ -47,6 +47,7 @@ class IndelType(Enum):
             return "Mixed"
         else:
             return "Match"
+
     @property
     def plot_name(self):
         if self._name_ == "DEL":
@@ -81,6 +82,7 @@ class IndelType(Enum):
             return cls.SUB
         else:
             return cls.MATCH
+
 
 # Pandas DataFrames
 # pandas data frame with 5 columns: SITE_NAME, REFERENCE, SGRNA, ON_TARGET, CUT_SITE
@@ -181,7 +183,8 @@ R_REV = "right_site_reversed"
 R_READ = "right_primer_read"
 L_READ = "left_primer_read"
 ALIGN_CUT_SITE = "alignment_cut_site"
-INDEL_COLS = [ALIGN_CUT_SITE, DEL_LEN, DEL_START, DEL_END, DEL_BASE, INS_LEN, INS_POS, INS_BASE, SUB_CNT, SUB_POS, SUB_BASE]
+INDEL_COLS = [ALIGN_CUT_SITE, DEL_LEN, DEL_START, DEL_END, DEL_BASE, INS_LEN, INS_POS, INS_BASE, SUB_CNT, SUB_POS,
+              SUB_BASE]
 
 # TransDf constants
 TRANS_NAME = "translocation_name"
@@ -204,10 +207,10 @@ C_MOCK = 1
 PRIMER_LEN = 20
 COMPLEMENT = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 BAD_AMPLICON_THRESHOLD = 500
-CIGAR_LEN_THRESHOLD = 8 # This threshold is applied only if alignment score is low
+CIGAR_LEN_THRESHOLD = 8  # This threshold is applied only if alignment score is low
 READ_LEN_SIDE = 20
 OUTPUT_DIR = "crispector_output"
-UNBALANCED_READ_WARNING = 3  #if Tx vs M read numbers are high unbalanced, (*3 or /3), report to the user
+UNBALANCED_READ_WARNING = 3  # if Tx vs M read numbers are high unbalanced, (*3 or /3), report to the user
 
 # DEBUG purpose constant
 ALIGNMENT_HUMAN = 'alignment_human_readable'
@@ -221,7 +224,7 @@ CI_LOW = "CI_low"
 CI_HIGH = "CI_high"
 SUMMARY_RESULTS_TITLES = [SITE_NAME, ON_TARGET, MOCK_READ_NUM, TX_READ_NUM, TX_EDIT, EDIT_PERCENT, CI_LOW, CI_HIGH]
 
-#TransResultDf columns
+# TransResultDf columns
 SITE_A = "site A"
 SITE_B = "site B"
 TX_TRANS_READ = "treatment reads"
@@ -288,3 +291,20 @@ READ_MOCK_ALL = "mock_aligned_reads"
 READ_TX_FILTER = "treatment_filtered_reads"
 READ_MOCK_FILTER = "mock_filtered_reads"
 EDIT_TEXT = "edit_text"
+
+# alleles constants
+HALF_WINDOW_LEN = 10  # one-side window length opening for searching snvs
+LENGTH_RATIO = 0.3  # filter site from allele analysis that the length ratio is higher than the given number
+SCORE_NORM_RATE = 1/10  # normalization of the score between entropy and coverage
+
+SNP_NUC_TYPE = 'snp_nuc_type'
+LEN = 'len'
+SNP_PHASE = 'snp_phase'
+IS_RANDOM = 'is_random'
+BASE = 'base'
+N = 'N'  # neutral nucleotide base
+AVG_SCORE = 'avg_score'
+ALLELE = 'allele'
+RANDOM_EDIT_READS = 'Random edited reads'
+PAM_WINDOW = 'PAM_window'
+GRNA_WINDOW = 'grna_window'

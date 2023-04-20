@@ -6,6 +6,33 @@ alignment:
     mismatch_score: -4 # mismatch score. -4 is EMBOSS needle default
     open_gap_score: -25 # open_gap_score score. -10 is EMBOSS needle default
     extend_gap_score: 0 # extend_gap_score score. -0.5 is EMBOSS needle default
+global_strict_alignment:
+    # global strict (no gap opening) alignment for allele case
+    mode: 'global'
+    match_score: 5
+    mismatch_score: 0
+    open_gap_score: -100
+    extend_gap_score: -100
+    target_end_gap_score: 0.0
+    query_end_gap_score: 0.0
+local_strict_alignment:
+    # local strict (no gap opening) alignment for allele case
+    mode: 'local'
+    match_score: 5
+    mismatch_score: 1
+    open_gap_score: -100
+    extend_gap_score: -100
+    target_end_gap_score: 0.0
+    query_end_gap_score: 0.0
+local_loose_alignment:
+    # local loose (tend more towards opening gaps) alignment for allele case
+    mode: 'local'
+    match_score: 5
+    mismatch_score: -4
+    open_gap_score: -10
+    extend_gap_score: 0
+    target_end_gap_score: 0.0
+    query_end_gap_score: 0.0
 NHEJ_inference:
     max_indel_size: &max_indel_size 500 # Max indel size, 500 is account as "infinity"
     window_size: 10 # Priors size should be 2*window_size for deletions & substitutions a 2*window_size+1 for insertions

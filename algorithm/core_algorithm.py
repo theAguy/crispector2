@@ -1,5 +1,5 @@
 from utils.constants_and_types import IsEdit, IndelType, AlgResult, Pr, FREQ, IS_EDIT, C_TX, C_MOCK, TX_READ_NUM, \
-    MOCK_READ_NUM, TX_EDIT, EDIT_PERCENT, CI_LOW, CI_HIGH, ReadsDf
+    MOCK_READ_NUM, TX_EDIT, EDIT_PERCENT, CI_LOW, CI_HIGH, ReadsDf, RANDOM_EDIT_READS, IS_RANDOM
 from utils.exceptions import ClassificationFailed
 from utils.logger import LoggerWrapper
 from utils.configurator import Configurator
@@ -15,7 +15,8 @@ class CoreAlgorithm:
     Core algorithm for CRISPECTOR
     """
 
-    def __init__(self, cut_site: int, modification: ModificationTypes, binom_p_l: List[Pr], confidence: Pr, on_target: bool):
+    def __init__(self, cut_site: int, modification: ModificationTypes, binom_p_l: List[Pr], confidence: Pr,
+                 on_target: bool):
         """
         :param cut_site:
         :param modification:
@@ -56,8 +57,8 @@ class CoreAlgorithm:
             table = tables.tables[table_idx]
             pointers = tables.pointers[table_idx]
             binom_p = self._binom_p_l[table_idx]
-            eval_size = (2*self._win_size+1) if indel_type == IndelType.INS else 2*self._win_size
-            self._edit[table_idx] = np.array(eval_size*[False])
+            eval_size = (2 * self._win_size + 1) if indel_type == IndelType.INS else 2 * self._win_size
+            self._edit[table_idx] = np.array(eval_size * [False])
 
             # Run evaluation on every position
             for pos_idx in range(eval_size):
@@ -138,15 +139,15 @@ class CoreAlgorithm:
         result_d[TX_READ_NUM] = self._n_reads_tx
         result_d[MOCK_READ_NUM] = self._n_reads_mock
         result_d[TX_EDIT] = edited_reads
-        result_d[EDIT_PERCENT] = 100*editing_activity
-        result_d[CI_LOW] = 100*CI_low
-        result_d[CI_HIGH] = 100*CI_high
-        # TBD: new: make until
+        result_d[EDIT_PERCENT] = 100 * editing_activity
+        result_d[CI_LOW] = 100 * CI_low
+        result_d[CI_HIGH] = 100 * CI_high
+
         try:
-            result_d['Random edited reads'] = self._tx_df.loc[(self._tx_df['is_random'] == True) &
-                                                              (self._tx_df['is_edited'] == True), 'frequency'].sum()
+            result_d[RANDOM_EDIT_READS] = self._tx_df.loc[(self._tx_df[IS_RANDOM] == True) &
+                                                          (self._tx_df[IS_EDIT] == True), FREQ].sum()
         except:
-            result_d['Random edited reads'] = 0
+            result_d[RANDOM_EDIT_READS] = 0
         return result_d
 
     def _compute_confidence_interval(self, editing_activity: Pr) -> Tuple[Pr, Pr]:
@@ -155,8 +156,8 @@ class CoreAlgorithm:
         :param editing_activity:
         :return: Tuple of low & high CI boundary
         """
-        confidence_inv = norm.ppf(self._confidence + (1-self._confidence)/2)
-        half_len_CI = confidence_inv * np.sqrt((editing_activity*(1-editing_activity))/self._n_reads_tx)
+        confidence_inv = norm.ppf(self._confidence + (1 - self._confidence) / 2)
+        half_len_CI = confidence_inv * np.sqrt((editing_activity * (1 - editing_activity)) / self._n_reads_tx)
         return max(0, editing_activity - half_len_CI), editing_activity + half_len_CI
 
     # Getters

@@ -5,7 +5,7 @@ from utils.constants_and_types import ReadsDf, IndelType, Path, DNASeq, CigarPat
     READ, ALIGNMENT_W_INS, ALIGNMENT_W_DEL, CIGAR, ALIGN_SCORE, FREQ, INS_LEN, INS_POS, DEL_LEN, DEL_START, \
     DEL_END, SUB_CNT, SUB_POS, INDEL_COLS, CIGAR_D, CIGAR_I, \
     CIGAR_S, CIGAR_M, AlignedIndel, DEL_BASE, INS_BASE, SUB_BASE, REVERSED, CIGAR_LEN, CIGAR_LEN_THRESHOLD, \
-    ALIGN_CUT_SITE, ALIGNMENT_HUMAN, FILTERED_PATH, ExpType
+    ALIGN_CUT_SITE, ALIGNMENT_HUMAN, FILTERED_PATH, ExpType, CUT_SITE, REFERENCE
 from input_processing.utils import reverse_complement, parse_cigar
 from utils.logger import LoggerWrapper
 from utils.configurator import Configurator
@@ -58,6 +58,7 @@ class Alignment:
         :param output: output path for filtered reads
         :param exp_name: experiment name
         :param exp_type:
+        :param allele: if True, indicates it is allele case alignment
         :return: reads_df with new columns & filtered reads (ReadDf type)
         """
 
@@ -67,7 +68,7 @@ class Alignment:
         # Align reads to their amplicon
         self._logger.debug("Alignment for {} - Start Needleman-Wunsch alignment for all reads.".format(exp_name))
         # TBD: added allele variable to here. maybe delete
-        self._align_reads_to_amplicon(reads_df, reference, allele)
+        self._align_reads_to_amplicon(reads_df, reference)
 
         # Filter reads with low alignment score
         # TBD: This is a new line - confirm
@@ -209,7 +210,7 @@ class Alignment:
         # remove unaligned reads from reads_df
         reads_df.drop(unaligned_df.index, inplace=True)
 
-    def _align_reads_to_amplicon(self, reads: ReadsDf, reference: DNASeq, allele):
+    def _align_reads_to_amplicon(self, reads: ReadsDf, reference: DNASeq):
         """
         - Align all reads to their amplicon.
         - Compute cigar path.
@@ -624,3 +625,118 @@ class Alignment:
         updated_reads_df = pd.DataFrame({ALIGNMENT_W_INS: reference_l, ALIGNMENT_W_DEL: read_l,
                                          CIGAR: cigar_l}, index=update_idx)
         reads.update(updated_reads_df)
+
+
+###############
+# for alleles #
+###############
+
+
+class LocalStrictAlignment:
+    """
+    All crispector alignment functionality - Needle-Wunsch, Shifting modification and so on.
+    """
+    def __init__(self, align_cfg: Dict):
+
+        # Create Aligner
+
+        self._aligner = Align.PairwiseAligner()
+        self._aligner.mode = align_cfg["mode"]
+        self._aligner.match_score = align_cfg["match_score"]
+        self._aligner.mismatch_score = align_cfg["mismatch_score"]
+        self._aligner.open_gap_score = align_cfg["open_gap_score"]
+        self._aligner.extend_gap_score = align_cfg["extend_gap_score"]
+        self._aligner.target_end_gap_score = align_cfg["target_end_gap_score"]
+        self._aligner.query_end_gap_score = align_cfg["query_end_gap_score"]
+
+    #-------------------------------#
+    ######### Private methods #######
+    #-------------------------------#
+
+    def _align_seq_to_read(self, relevant_read, window):
+        return self._aligner.align(relevant_read, window)
+
+
+
+class LocalLooseAlignment:
+    """
+    All crispector alignment functionality - Needle-Wunsch, Shifting modification and so on.
+    """
+    def __init__(self, align_cfg: Dict):
+
+        # Create Aligner
+
+        self._aligner = Align.PairwiseAligner()
+        self._aligner.mode = align_cfg["mode"]
+        self._aligner.match_score = align_cfg["match_score"]
+        self._aligner.mismatch_score = align_cfg["mismatch_score"]
+        self._aligner.open_gap_score = align_cfg["open_gap_score"]
+        self._aligner.extend_gap_score = align_cfg["extend_gap_score"]
+        self._aligner.target_end_gap_score = align_cfg["target_end_gap_score"]
+        self._aligner.query_end_gap_score = align_cfg["query_end_gap_score"]
+
+    #-------------------------------#
+    ######### Private methods #######
+    #-------------------------------#
+
+    def _align_seq_to_read(self, relevant_read, window):
+        return self._aligner.align(relevant_read, window)
+
+
+class GlobalStrictAlignment:
+    """
+    All crispector alignment functionality - Needle-Wunsch, Shifting modification and so on.
+    """
+    def __init__(self, align_cfg: Dict):
+
+        # Create Aligner
+
+        self._aligner = Align.PairwiseAligner()
+        self._aligner.mode = align_cfg["mode"]
+        self._aligner.match_score = align_cfg["match_score"]
+        self._aligner.mismatch_score = align_cfg["mismatch_score"]
+        self._aligner.open_gap_score = align_cfg["open_gap_score"]
+        self._aligner.extend_gap_score = align_cfg["extend_gap_score"]
+        self._aligner.target_end_gap_score = align_cfg["target_end_gap_score"]
+        self._aligner.query_end_gap_score = align_cfg["query_end_gap_score"]
+
+    #-------------------------------#
+    ######### Private methods #######
+    #-------------------------------#
+
+    def _align_seq_to_read(self, relevant_read, window):
+        return self._aligner.align(relevant_read, window)
+
+def align_allele_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon_min_score):
+    """
+    align df of allele to the new allele reference
+    :param: reads_df: The allele site DataFrames
+    :param: ref_df: the reference DateFrame
+    :param: amplicon_min_score: minimum score for alignment to the amplicon
+    :param: translocation_amplicon_min_score: minimum score fir translocation
+    :return: new_sites: returns all allele sites aligned to their amplicons
+    """
+
+    # set configuration and aligner for the alignment
+    _cfg = Configurator.get_cfg()
+    _aligner = Alignment(_cfg["alignment"], amplicon_min_score, translocation_amplicon_min_score,
+                         _cfg["NHEJ_inference"]["window_size"])
+
+    new_sites = reads_df.copy()
+
+    # iterate over each new allele and re-align it
+    for site, sites_allele in reads_df.items():
+        # for i in range(len(site_allele)):
+        for allele, allele_info in sites_allele.items():
+            allele_name = allele_info[0]
+            allele_df = allele_info[1]
+            # zero all aligned so far
+
+            cut_site = ref_df.loc[allele_name, CUT_SITE]
+            ref_amplicon = ref_df.loc[allele_name, REFERENCE]
+
+            new_allele_df = _aligner.align_reads(allele_df, ref_amplicon, cut_site,
+                                                 None, None, allele_name, None, allele=True)
+            new_sites[site][allele][1] = new_allele_df
+
+    return new_sites

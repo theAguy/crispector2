@@ -8,7 +8,7 @@ from modifications.modification_types import ModificationTypes
 import numpy as np
 
 
-def compute_binom_p(tables: Dict[str ,ModificationTables], modifications: ModificationTypes,
+def compute_binom_p(tables: Dict[str, ModificationTables], modifications: ModificationTypes,
                     override_coin: bool, ref_df: AmpliconDf) -> Dict[str, List[Pr]]:
     """
     Compute binomial probability for each site.
@@ -16,7 +16,6 @@ def compute_binom_p(tables: Dict[str ,ModificationTables], modifications: Modifi
     :param modifications: Modification Types
     :param override_coin:
     :param ref_df:
-    :param donor: is donor experiment flag
     :return: Dict[SITE_NAME, LIST of probability for each modification type]
     """
 
@@ -49,7 +48,7 @@ def compute_binom_p(tables: Dict[str ,ModificationTables], modifications: Modifi
         return binom_p_d
 
     n_on = tables[on_site_name].n_reads_tx
-    p_d = dict() # probability dict, for all indels and sites
+    p_d = dict()  # probability dict, for all indels and sites
     for indel_type in [IndelType.DEL, IndelType.INS]:
         e_on = 0
         site_noise_d = dict() # Keys - sites, values - mock noise vector (for each position)
@@ -72,7 +71,7 @@ def compute_binom_p(tables: Dict[str ,ModificationTables], modifications: Modifi
                         e_on += site_table.tables[table_idx][C_TX, cut_site]
                     # For deletion - max between left and right to the cut-site
                     else:
-                        e_on += np.max(site_table.tables[table_idx][C_TX, cut_site:cut_site+1])
+                        e_on += np.max(site_table.tables[table_idx][C_TX, cut_site:cut_site + 1])
 
                     # Don't compute alpha from on-target due to possible contamination
                     continue
@@ -115,4 +114,3 @@ def compute_binom_p(tables: Dict[str ,ModificationTables], modifications: Modifi
                 binom_p_d[site_name].append(default_q)
 
     return binom_p_d
-
