@@ -19,7 +19,7 @@ from utils.configurator import Configurator
 from report.visualization_and_output import create_site_output, create_experiment_output
 # from allele.allele2 import  # AlleleForMock, ref_dfAlleleHandler, align_allele_df, AlleleForTx, estimate_random_reads_editing_effect
 from allele.allele_mock import AlleleForMock
-from allele.allele_reference_df import ref_dfAlleleHandler
+from allele.allele_reference_df import ref_dfAlleleHandler, is_snp_in_pam_grna
 from allele.allele_tx import AlleleForTx
 from allele.allele_re_calc_stats import re_calculate_statistics, estimate_random_reads_editing_effect
 from input_processing.alignment import align_allele_df
@@ -91,21 +91,21 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/tx_trans_df', 'wb')
-        pickle.dump(tx_trans_df, outfile)
-        outfile.close()
-
-        outfile = open('pickle/mock_trans_df', 'wb')
-        pickle.dump(mock_trans_df, outfile)
-        outfile.close()
-
-        outfile = open('pickle/mock_reads_d_original', 'wb')
-        pickle.dump(mock_reads_d, outfile)
-        outfile.close()
-
-        outfile = open('pickle/tx_reads_d_original', 'wb')
-        pickle.dump(tx_reads_d, outfile)
-        outfile.close()
+        # outfile = open('pickle/tx_trans_df', 'wb')
+        # pickle.dump(tx_trans_df, outfile)
+        # outfile.close()
+        #
+        # outfile = open('pickle/mock_trans_df', 'wb')
+        # pickle.dump(mock_trans_df, outfile)
+        # outfile.close()
+        #
+        # outfile = open('pickle/mock_reads_d_original', 'wb')
+        # pickle.dump(mock_reads_d, outfile)
+        # outfile.close()
+        #
+        # outfile = open('pickle/tx_reads_d_original', 'wb')
+        # pickle.dump(tx_reads_d, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -138,17 +138,17 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        outfile = open('pickle/mock_reads_d_allele_multi', 'wb')
-        pickle.dump(mock_reads_d_allele, outfile)
-        outfile.close()
-
-        outfile = open('pickle/df_mock_tx_snp_ratios_multi', 'wb')
-        pickle.dump(Alleles.df_mock_tx_snp_ratios, outfile)
-        outfile.close()
-
-        outfile = open('pickle/alleles_ref_reads', 'wb')
-        pickle.dump(Alleles.alleles_ref_reads, outfile)
-        outfile.close()
+        # outfile = open('pickle/mock_reads_d_allele_multi', 'wb')
+        # pickle.dump(mock_reads_d_allele, outfile)
+        # outfile.close()
+        #
+        # outfile = open('pickle/df_mock_tx_snp_ratios_multi', 'wb')
+        # pickle.dump(Alleles.df_mock_tx_snp_ratios, outfile)
+        # outfile.close()
+        #
+        # outfile = open('pickle/alleles_ref_reads', 'wb')
+        # pickle.dump(Alleles.alleles_ref_reads, outfile)
+        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
@@ -169,6 +169,10 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # create new ref_df with the new sites
         ref_df_initializer = ref_dfAlleleHandler()
         allele_ref_df = ref_df_initializer.run(ref_df, mock_reads_d_allele)
+        # new:start: check if snp in pam or in gRNA
+        snp_in_pam_grna = is_snp_in_pam_grna(allele_ref_df)
+        if snp_in_pam_grna:
+            logger.warning(snp_in_pam_grna)
         logger.info("Start re-aligning new mock alleles sites to their reference amplicons")
         # align new site again - mock
         aligned_mock_reads_d_allele = align_allele_df(mock_reads_d_allele, allele_ref_df,

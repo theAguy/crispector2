@@ -1,5 +1,6 @@
 from utils.constants_and_types import SITE_NAME, CUT_SITE, PAM_WINDOW, GRNA_WINDOW, SGRNA_REVERSED, REFERENCE
 import pandas as pd
+import ast
 
 
 class ref_dfAlleleHandler:
@@ -50,3 +51,33 @@ class ref_dfAlleleHandler:
 
             self._ref_df.at[i, PAM_WINDOW] = PAM
             self._ref_df.at[i, GRNA_WINDOW] = grna
+
+
+def is_snp_in_pam_grna(ref_df):
+    """
+    If the snps that were found are part of the PAM or gRNA, raise a WARNING
+    :param ref_df:
+    :return: None if all snps not in grna or pam
+    """
+    sites_done = list()
+    for site_name, site_info in ref_df.iterrows():
+        if '[' in site_name:
+            temp_general_site_name = site_name[:site_name.index('[')]
+            if temp_general_site_name not in sites_done:
+                PAM_window = site_info['PAM_window']
+                grna_window = site_info['grna_window']
+                snps_locus = site_name[site_name.index('['): site_name.index(']')+1]
+                snps_locus = ast.literal_eval(snps_locus)
+
+                for snp in snps_locus:
+                    if PAM_window[0] <= snp <= PAM_window[1]:
+                        return 'one of the SNPs in this site is located inside the PAM! ' \
+                               'Make sure to examine the results carefully'
+                    elif grna_window[0] <= snp <= grna_window[1]:
+                        return 'one of the SNPs in this site is located inside the gRNA! ' \
+                               'Make sure to examine the results carefully'
+
+                sites_done.append(temp_general_site_name)
+
+    return None
+
