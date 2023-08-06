@@ -9,7 +9,7 @@ from utils.exceptions import FastpRunTimeError, SgRNANotInReferenceSequence, \
     AlignerSubstitutionDoesntExist, ClassificationFailed, BadSgRNAChar, BadReferenceAmpliconChar, BadInputError
 from utils.constants_and_types import Path, welcome_msg, FREQ, TX_READ_NUM, MOCK_READ_NUM, EDIT_PERCENT, \
     SITE_NAME, ON_TARGET, CUT_SITE, AlgResult, OUTPUT_DIR, SUMMARY_RESULTS_TITLES, \
-    AlgResultDf, DONOR
+    AlgResultDf, DONOR, PAM_WINDOW, GRNA_WINDOW, SGRNA_REVERSED, STRAND
 from report.html_report import create_final_html_report
 from input_processing.input_processing import InputProcessing
 import traceback
@@ -57,6 +57,9 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         else:
             LoggerWrapper.set_logger_level(logging.INFO)
         logger = LoggerWrapper.get_logger()
+
+        # running CRISPECTOR2.0
+        logger.info("Running CRISPECTOR2.0...")
 
         # Display welcome msg
         click.echo(welcome_msg)
@@ -353,6 +356,8 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                                               row[ON_TARGET])
             result_summary_d[site] = algorithm_d[site].evaluate(tables_d[site])
             result_summary_d[site][ON_TARGET] = row[ON_TARGET]
+            result_summary_d[site][PAM_WINDOW] = allele_ref_df.at[site, PAM_WINDOW]
+            result_summary_d[site][GRNA_WINDOW] = allele_ref_df.at[site, GRNA_WINDOW]
             logger.debug("Site {} - Editing activity is {:.2f}".format(site, result_summary_d[site][EDIT_PERCENT]))
 
         # section of handling low quality statistics of alleles

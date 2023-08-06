@@ -1,5 +1,5 @@
 from utils.constants_and_types import HALF_WINDOW_LEN, LENGTH_RATIO, SNP_NUC_TYPE, FREQ, ALIGNMENT_W_DEL, LEN, \
-    SNP_PHASE, IS_RANDOM, BASE, REFERENCE, ALIGN_CUT_SITE, N, SCORE_NORM_RATE
+    SNP_PHASE, IS_RANDOM, BASE, REFERENCE, ALIGN_CUT_SITE, N, SCORE_NORM_RATE, READ
 import numpy as np
 import pandas as pd
 from scipy.stats import entropy
@@ -374,8 +374,9 @@ class AlleleForMock:
         for i, locus in enumerate(self._snp_locus):
             new_ref_read = new_ref_read[:locus] + allele[i] + new_ref_read[locus + 1:]
         # if the N was not a SNP - remove it from the new reference
-        for n in [indx for indx, char in enumerate(new_ref_read) if char == 'N']:
-            new_ref_read = new_ref_read[:n] + new_ref_read[n+1:]
+        # for n in [indx for indx, char in enumerate(new_ref_read) if char == 'N']:
+        #     new_ref_read = new_ref_read[:n] + new_ref_read[n+1:]
+        new_ref_read = new_ref_read.replace("N", "")
 
         return new_ref_read
 
@@ -422,10 +423,14 @@ class AlleleForMock:
 
                 # handle reads that are not at length of the self._consensus length:
                 # get the relevant reference read
-                reference_read = same_len_df.loc[same_len_indexes[list(same_len_df[FREQ]).index(
+                #TBD: New change - CHECK! START
+                reference_read_w_al = same_len_df.loc[same_len_indexes[list(same_len_df[FREQ]).index(
                     max(same_len_df[FREQ]))], ALIGNMENT_W_DEL]
+                reference_read_wo_al = same_len_df.loc[same_len_indexes[list(same_len_df[FREQ]).index(
+                    max(same_len_df[FREQ]))], READ]
+                # TBD: New change END
                 # create all relevant "windows" around each potential SNP
-                windows_list_for_realignment = self._get_general_windows(reference_read)
+                windows_list_for_realignment = self._get_general_windows(reference_read_w_al)
                 # assign reads with different length back to the main df
                 df_w_returned, df_dropped = self._return_reads_to_nuc_dist(
                     same_len_df, filtered_reads_diff_len, windows_list_for_realignment)
@@ -437,7 +442,7 @@ class AlleleForMock:
                 self._nuc_distribution_before = self._norm_nuc_distribution(df_w_returned[[SNP_PHASE, FREQ]])
                 # get the number of alleles
                 _, _, _, self._number_of_alleles = self._get_num_alleles()
-                self._windows, reads_per_allele = self._get_specific_windows(reference_read)
+                self._windows, reads_per_allele = self._get_specific_windows(reference_read_wo_al)
                 self.alleles_ref_reads[self._site_name] = reads_per_allele
 
                 # assign alleles that are not represented to alleles that do

@@ -64,17 +64,17 @@ def is_snp_in_pam_grna(ref_df):
         if '[' in site_name:
             temp_general_site_name = site_name[:site_name.index('[')]
             if temp_general_site_name not in sites_done:
-                PAM_window = site_info['PAM_window']
-                grna_window = site_info['grna_window']
+                PAM_window = site_info[PAM_WINDOW]
+                grna_window = site_info[GRNA_WINDOW]
                 snps_locus = site_name[site_name.index('['): site_name.index(']')+1]
                 snps_locus = ast.literal_eval(snps_locus)
 
                 for snp in snps_locus:
                     if PAM_window[0] <= snp <= PAM_window[1]:
-                        return 'one of the SNPs in this site is located inside the PAM! ' \
+                        return f'one of the SNPs in site {site_name} is located inside the PAM! ' \
                                'Make sure to examine the results carefully'
                     elif grna_window[0] <= snp <= grna_window[1]:
-                        return 'one of the SNPs in this site is located inside the gRNA! ' \
+                        return f'one of the SNPs in site {site_name} is located inside the gRNA! ' \
                                'Make sure to examine the results carefully'
 
                 sites_done.append(temp_general_site_name)

@@ -8,7 +8,7 @@ from typing import Dict
 from algorithm.binomial_probability import compute_binom_p
 from algorithm.core_algorithm import CoreAlgorithm
 from utils.constants_and_types import FREQ, TX_READ_NUM, MOCK_READ_NUM, ON_TARGET, CUT_SITE, AlgResult, IS_RANDOM, \
-    EDIT_PERCENT, RANDOM_EDIT_READS, TX_EDIT
+    EDIT_PERCENT, RANDOM_EDIT_READS, TX_EDIT, PAM_WINDOW, GRNA_WINDOW
 from modifications.modification_tables import ModificationTables
 from modifications.modification_types import ModificationTypes
 from scipy.stats import norm
@@ -300,6 +300,9 @@ def _compute_best_stats(enable_substitutions, confidence_interval, donor, min_nu
             algorithm_d[allele] = CoreAlgorithm(cut_site, modifications_allele, binom_p_d[allele],
                                                 confidence_interval, row[ON_TARGET])
             result_summary_d_allele[allele] = algorithm_d[allele].evaluate(tables_d_allele[allele])
+            result_summary_d_allele[allele][ON_TARGET] = row[ON_TARGET]
+            result_summary_d_allele[allele][PAM_WINDOW] = allele_ref_df.at[site, PAM_WINDOW]
+            result_summary_d_allele[allele][GRNA_WINDOW] = allele_ref_df.at[site, GRNA_WINDOW]
 
     return tables_d_allele, result_summary_d_allele
 
