@@ -87,7 +87,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                                            fastp_options_string, keep_intermediate_files, max_edit_distance_on_primers)
 
         # process input
-        # tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
+        tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
 
         # get alleles from mock
         ##############################################################################################
@@ -111,21 +111,21 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        infile = open('pickle/tx_trans_df', 'rb')
-        tx_trans_df = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/mock_trans_df', 'rb')
-        mock_trans_df = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/mock_reads_d_original', 'rb')
-        mock_reads_d = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/tx_reads_d_original', 'rb')
-        tx_reads_d = pickle.load(infile)
-        infile.close()
+        # infile = open('pickle/tx_trans_df', 'rb')
+        # tx_trans_df = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/mock_trans_df', 'rb')
+        # mock_trans_df = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/mock_reads_d_original', 'rb')
+        # mock_reads_d = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/tx_reads_d_original', 'rb')
+        # tx_reads_d = pickle.load(infile)
+        # infile.close()
         ##############################################################################################
         ##############################################################################################
         if allele:

@@ -18,9 +18,9 @@ from utils.logger import LoggerWrapper
 from utils.configurator import Configurator
 from report.visualization_and_output import create_site_output, create_experiment_output
 # from allele.allele2 import  # AlleleForMock, ref_dfAlleleHandler, align_allele_df, AlleleForTx, estimate_random_reads_editing_effect
-from allele.allele_old.allele_mock import AlleleForMock
+from allele.allele_old.allele_mock_old import AlleleForMock
 from allele.allele_reference_df import ref_dfAlleleHandler, is_snp_in_pam_grna
-from allele.allele_old.allele_tx import AlleleForTx
+from allele.allele_old.allele_tx_old import AlleleForTx
 from allele.allele_old.allele_re_calc_stats import re_calculate_statistics, estimate_random_reads_editing_effect
 from input_processing.alignment import align_allele_df
 import os
