@@ -7,9 +7,9 @@ from input_processing.utils import read_exp_config_and_check_input
 from utils.exceptions import FastpRunTimeError, SgRNANotInReferenceSequence, \
     ConfiguratorIsCalledBeforeInitConfigPath, PriorPositionHasWrongLength, UnknownAlignmentChar, \
     AlignerSubstitutionDoesntExist, ClassificationFailed, BadSgRNAChar, BadReferenceAmpliconChar, BadInputError
-from utils.constants_and_types import Path, welcome_msg, FREQ, TX_READ_NUM, MOCK_READ_NUM, SITE_NAME, ON_TARGET, \
-    CUT_SITE, AlgResult, OUTPUT_DIR, SUMMARY_RESULTS_TITLES, AlgResultDf, DONOR, PAM_WINDOW, GRNA_WINDOW, EDIT_PERCENT,\
-    SUMMARY_RESULTS_TITLES_FOR_ALLELES
+from utils.constants_and_types import Path, welcome_msg, FREQ, TX_READ_NUM, MOCK_READ_NUM, EDIT_PERCENT, \
+    SITE_NAME, ON_TARGET, CUT_SITE, AlgResult, OUTPUT_DIR, SUMMARY_RESULTS_TITLES, \
+    AlgResultDf, DONOR, PAM_WINDOW, GRNA_WINDOW
 from report.html_report import create_final_html_report
 from input_processing.input_processing import InputProcessing
 import traceback
@@ -17,10 +17,11 @@ from algorithm.translocations import translocations_test
 from utils.logger import LoggerWrapper
 from utils.configurator import Configurator
 from report.visualization_and_output import create_site_output, create_experiment_output
-from allele.allele_mock import AlleleForMock
-from allele.random_reads_handler import RandomReadsHandler
+# from allele.allele2 import  # AlleleForMock, ref_dfAlleleHandler, align_allele_df, AlleleForTx, estimate_random_reads_editing_effect
+from allele.allele_old.allele_mock import AlleleForMock
 from allele.allele_reference_df import ref_dfAlleleHandler, is_snp_in_pam_grna
-from allele.allele_tx import AlleleForTx
+from allele.allele_old.allele_tx import AlleleForTx
+from allele.allele_old.allele_re_calc_stats import re_calculate_statistics, estimate_random_reads_editing_effect
 from input_processing.alignment import align_allele_df
 import os
 import pandas as pd
@@ -37,8 +38,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         max_edit_distance_on_primers: int, confidence_interval: float, min_editing_activity: float,
         translocation_p_value: float, suppress_site_output: bool, disable_translocations: bool,
         enable_substitutions: bool, keep_intermediate_files: bool, command_used: str, snv_ratio: str,
-        max_potential_snvs: int, max_allele_mismatches: int, max_len_snv_ctc: int,
-        random_reads_percentage_threshold: float, allele: bool):
+        max_potential_snvs: int, max_allele_mismatches: int, max_len_snv_ctc: int):
     try:
         # Create report output folder
         if not os.path.exists(report_output):
@@ -87,9 +87,10 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                                            fastp_options_string, keep_intermediate_files, max_edit_distance_on_primers)
 
         # process input
-        # tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
+        tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
 
         # get alleles from mock
+        ''' NEW !!!! : START '''
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
@@ -111,33 +112,32 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        infile = open('pickle/tx_trans_df', 'rb')
-        tx_trans_df = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/mock_trans_df', 'rb')
-        mock_trans_df = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/mock_reads_d_original', 'rb')
-        mock_reads_d = pickle.load(infile)
-        infile.close()
-
-        infile = open('pickle/tx_reads_d_original', 'rb')
-        tx_reads_d = pickle.load(infile)
-        infile.close()
+        # infile = open('pickle/tx_trans_df', 'rb')
+        # tx_trans_df = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/mock_trans_df', 'rb')
+        # mock_trans_df = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/mock_reads_d_original', 'rb')
+        # mock_reads_d = pickle.load(infile)
+        # infile.close()
+        #
+        # infile = open('pickle/tx_reads_d_original', 'rb')
+        # tx_reads_d = pickle.load(infile)
+        # infile.close()
         ##############################################################################################
         ##############################################################################################
-        if allele:
-            logger.info("Start analyzing alleles...")
-            # finding alleles in each site in mock and insert to a new dictionary
-            Alleles = AlleleForMock(eval(snv_ratio), ref_df, max_potential_snvs, max_allele_mismatches, max_len_snv_ctc,
-                                    random_reads_percentage_threshold)
-            for site_name in tqdm(mock_reads_d.keys()):
-                df_allele = mock_reads_d[site_name]
-                Alleles.run(site_name, df_allele)
-            mock_reads_d_allele = Alleles.new_alleles
-            mock_random_reads_d = Alleles.random_reads
+
+        logger.info("Start analyzing alleles...")
+        # finding alleles in each site in mock and insert to a new dictionary
+        Alleles = AlleleForMock(eval(snv_ratio), ref_df, max_potential_snvs, max_allele_mismatches, max_len_snv_ctc)
+        for site_name in tqdm(mock_reads_d.keys()):
+            df_allele = mock_reads_d[site_name]
+            Alleles.run(site_name, df_allele)
+        mock_reads_d_allele = Alleles.new_alleles
+
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
@@ -151,10 +151,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         #
         # outfile = open('pickle/alleles_ref_reads', 'wb')
         # pickle.dump(Alleles.alleles_ref_reads, outfile)
-        # outfile.close()
-        #
-        # outfile = open('pickle/mock_random_reads_d', 'wb')
-        # pickle.dump(mock_random_reads_d, outfile)
         # outfile.close()
         ##############################################################################################
         # INFILE
@@ -170,32 +166,26 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # infile = open('pickle/alleles_ref_reads', 'rb')
         # Alleles.alleles_ref_reads = pickle.load(infile)
         # infile.close()
-        #
-        # infile = open('pickle/mock_random_reads_d', 'rb')
-        # mock_random_reads_d = pickle.load(infile)
-        # infile.close()
-
         ##############################################################################################
         ##############################################################################################
-        if allele:
-            # create new ref_df with the new sites
-            ref_df_initializer = ref_dfAlleleHandler()
-            allele_ref_df = ref_df_initializer.run(ref_df, mock_reads_d_allele)
-            # check if snp in pam or in gRNA
-            snp_in_pam_grna = is_snp_in_pam_grna(allele_ref_df)
-            if snp_in_pam_grna:
-                logger.warning(snp_in_pam_grna)
-            logger.info("Start re-aligning new mock alleles sites to their reference amplicons")
-            # align new site again - mock
-            aligned_mock_reads_d_allele = align_allele_df(mock_reads_d_allele, allele_ref_df,
-                                                          amplicon_min_score, translocation_amplicon_min_score)
 
-            # assigning the new allele dfs to the original site dfs
-            for key, site_lists in aligned_mock_reads_d_allele.items():
-                for allele_name, allele_info in site_lists.items():
-                    mock_reads_d[allele_info[0]] = allele_info[1]
-        else:
-            allele_ref_df = ref_df
+        # create new ref_df with the new sites
+        ref_df_initializer = ref_dfAlleleHandler()
+        allele_ref_df = ref_df_initializer.run(ref_df, mock_reads_d_allele)
+        # new:start: check if snp in pam or in gRNA
+        snp_in_pam_grna = is_snp_in_pam_grna(allele_ref_df)
+        if snp_in_pam_grna:
+            logger.warning(snp_in_pam_grna)
+        logger.info("Start re-aligning new mock alleles sites to their reference amplicons")
+        # align new site again - mock
+        aligned_mock_reads_d_allele = align_allele_df(mock_reads_d_allele, allele_ref_df,
+                                                      amplicon_min_score, translocation_amplicon_min_score)
+
+        # assigning the new allele dfs to the original site dfs
+        for key, site_lists in aligned_mock_reads_d_allele.items():
+            for allele, allele_info in site_lists.items():
+                mock_reads_d[allele_info[0]] = allele_info[1]
+
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
@@ -210,13 +200,12 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # infile.close()
         ##############################################################################################
         ##############################################################################################
-        if allele:
-            logger.info("Start handling Tx with respect for their alleles")
-            # treat all the treatment as for alleles
-            TxAllele = AlleleForTx(tx_reads_d, mock_reads_d_allele, Alleles.alleles_ref_reads)
-            tx_reads_d_allele, sites_score, ratios_df = TxAllele.run(Alleles.df_mock_tx_snp_ratios)
-            tx_random_reads_d = TxAllele.random_reads
-            # TBD: deleted the variable "original_sites", check if works without. if not - bring back
+
+        logger.info("Start handling Tx with respect for their alleles")
+        # treat all the treatment as for alleles
+        tx_allele_df_initializer = AlleleForTx(tx_reads_d, mock_reads_d_allele, Alleles.alleles_ref_reads)
+        tx_reads_d_allele, sites_score, ratios_df = tx_allele_df_initializer.run(Alleles.df_mock_tx_snp_ratios)
+        # TBD: deleted the variable "original_sites", check if works without. if not - bring back
 
         ##############################################################################################
         # OUTFILE
@@ -224,37 +213,29 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # outfile = open('pickle/tx_reads_d_allele', 'wb')
         # pickle.dump(tx_reads_d_allele, outfile)
         # outfile.close()
-        #
-        # outfile = open('pickle/tx_random_reads_d', 'wb')
-        # pickle.dump(tx_random_reads_d, outfile)
-        # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
         # infile = open('pickle/tx_reads_d_allele', 'rb')
         # tx_reads_d_allele = pickle.load(infile)
         # infile.close()
-        #
-        # infile = open('pickle/tx_random_reads_d', 'rb')
-        # tx_random_reads_d = pickle.load(infile)
-        # infile.close()
         ##############################################################################################
         ##############################################################################################
-        if allele:
-            logger.info("Start re-aligning new Tx alleles sites to their reference amplicons")
-            # align new site again - tx
-            aligned_tx_reads_d_allele = align_allele_df(tx_reads_d_allele, allele_ref_df,
-                                                        amplicon_min_score, translocation_amplicon_min_score)
 
-            for key, site_lists in aligned_tx_reads_d_allele.items():
-                for allele_name, allele_info in site_lists.items():
-                    tx_reads_d[allele_info[0]] = allele_info[1]
+        logger.info("Start re-aligning new Tx alleles sites to their reference amplicons")
+        # align new site again - tx
+        aligned_tx_reads_d_allele = align_allele_df(tx_reads_d_allele, allele_ref_df,
+                                                    amplicon_min_score, translocation_amplicon_min_score)
 
-            # # TBD: New addition. With additional columns (is_filtered and is_random) NOT necessarily needed. CHECK IT OUT
-            # site_names = list(tx_reads_d.keys())
-            # for original_site_name, original_site_df in original_sites.items():
-            #     if original_site_name in site_names:
-            #         tx_reads_d[original_site_name] = original_site_df
+        for key, site_lists in aligned_tx_reads_d_allele.items():
+            for allele, allele_info in site_lists.items():
+                tx_reads_d[allele_info[0]] = allele_info[1]
+
+       # # # TBD: New addition. With additional columns (is_filtered and is_random) NOT necessarily needed. CHECK IT OUT
+       # # site_names = list(tx_reads_d.keys())
+       # # for original_site_name, original_site_df in original_sites.items():
+       # #     if original_site_name in site_names:
+       # #         tx_reads_d[original_site_name] = original_site_df
 
         ##############################################################################################
         # OUTFILE
@@ -278,16 +259,16 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # infile.close()
         ##############################################################################################
         ##############################################################################################
-        if allele:
-            allele_ref_df.index.name = 'index'
-            # allele_ref_df = allele_ref_df.merge(sites_score, how='left', left_on='Site Name', right_on='Site Name')
-            allele_ref_df.index = allele_ref_df[SITE_NAME]
 
-            # Create site output folders
-            for site, row in allele_ref_df.iterrows():
-                site_output = os.path.join(output, site)
-                if not os.path.exists(site_output):
-                    os.makedirs(site_output)
+        allele_ref_df.index.name = 'index'
+        allele_ref_df = allele_ref_df.merge(sites_score, how='left', left_on='Site Name', right_on='Site Name')
+        allele_ref_df.index = allele_ref_df[SITE_NAME]
+
+        # Create site output folders
+        for site, row in allele_ref_df.iterrows():
+            site_output = os.path.join(output, site)
+            if not os.path.exists(site_output):
+                os.makedirs(site_output)
 
         ##############################################################################################
         # OUTFILE
@@ -304,6 +285,8 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # allele_ref_df = pd.DataFrame.from_dict(allele_ref_df)
         ##############################################################################################
         ##############################################################################################
+
+        ''' NEW !!!! : END '''
 
         # Get modification types and positions priors
         modifications = ModificationTypes.init_from_cfg(enable_substitutions)
@@ -373,37 +356,44 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                                               row[ON_TARGET])
             result_summary_d[site] = algorithm_d[site].evaluate(tables_d[site])
             result_summary_d[site][ON_TARGET] = row[ON_TARGET]
-            if allele:
-                # get the PAM and gRNA window
-                result_summary_d[site][PAM_WINDOW] = allele_ref_df.at[site, PAM_WINDOW]
-                result_summary_d[site][GRNA_WINDOW] = allele_ref_df.at[site, GRNA_WINDOW]
-            else:
-                logger.debug("Site {} - Editing activity is {:.2f}".format(site, result_summary_d[site][EDIT_PERCENT]))
-        if allele:
-            # handle the random reads that weren't assigned to alleles
-            random_reads_handler = RandomReadsHandler(mock_random_reads_d, tx_random_reads_d, tables_d, result_summary_d,
-                                                      Alleles.alleles_ref_reads, amplicon_min_score,
-                                                      translocation_amplicon_min_score, enable_substitutions,
-                                                      confidence_interval, donor, min_num_of_reads,
-                                                      override_noise_estimation, allele_ref_df, output)
-            random_reads_handler.map_alleles_to_site(mock_reads_d_allele)
-            tables_d_w_random, result_summary_d_w_random = random_reads_handler.run_initial_assigner()
-            # section of handling low quality statistics of alleles
-            best_tables_d, best_result_summary_d = random_reads_handler.run_best_assigner(result_summary_d_w_random)
+            result_summary_d[site][PAM_WINDOW] = allele_ref_df.at[site, PAM_WINDOW]
+            result_summary_d[site][GRNA_WINDOW] = allele_ref_df.at[site, GRNA_WINDOW]
+            logger.debug("Site {} - Editing activity is {:.2f}".format(site, result_summary_d[site][EDIT_PERCENT]))
 
-            if best_tables_d:
-                for site, site_result in best_result_summary_d.items():
-                    result_summary_d[site] = site_result
-                for site, mod_info in best_tables_d.items():
-                    tables_d[site] = mod_info
+        # section of handling low quality statistics of alleles
+        re_run_overlapping_sites = dict()
+        # get the list of all the alleles of site
+        for site, alleles in mock_reads_d_allele.items():
+            allele_names = list()
+            for snp, allele_info in alleles.items():
+                allele_names.append(allele_info[0])
+
+            # get the results_summary_stat_per all sites' alleles
+            alleles_results_summary = dict()
+            for allele_name in allele_names:
+                alleles_results_summary[allele_name] = result_summary_d[allele_name]
+            # if the quality statistics is poor:
+            if estimate_random_reads_editing_effect(alleles_results_summary, confidence_interval):
+                re_run_overlapping_sites[site] = alleles
+
+        # find the best statistics for the overlapping sites
+        if len(re_run_overlapping_sites) > 0:
+            new_tables_d, best_stats_per_site = re_calculate_statistics(output, enable_substitutions,
+                                                                        confidence_interval, donor, min_num_of_reads,
+                                                                        override_noise_estimation, allele_ref_df,
+                                                                        tables_d, re_run_overlapping_sites,
+                                                                        amplicon_min_score,
+                                                                        translocation_amplicon_min_score, binom_p_d)
+            for site, site_result in best_stats_per_site.items():
+                result_summary_d[site] = site_result
+
+            for site, mod_info in new_tables_d.items():
+                tables_d[site] = mod_info
 
         # Convert result_summary dict to DataFrame
         summary_df: AlgResultDf = pd.DataFrame.from_dict(result_summary_d, orient='index')
         summary_df[SITE_NAME] = summary_df.index
-        if allele:
-            summary_df = summary_df.reindex(allele_ref_df.index, columns=SUMMARY_RESULTS_TITLES_FOR_ALLELES)
-        else:
-            summary_df = summary_df.reindex(allele_ref_df.index, columns=SUMMARY_RESULTS_TITLES)
+        summary_df = summary_df.reindex(allele_ref_df.index, columns=SUMMARY_RESULTS_TITLES)
         summary_df = summary_df.reset_index(drop=True)
 
         logger.info("Evaluating editing activity for all sites - Done!")

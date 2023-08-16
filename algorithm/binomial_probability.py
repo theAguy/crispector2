@@ -26,10 +26,14 @@ def compute_binom_p(tables: Dict[str, ModificationTables], modifications: Modifi
     default_q_warning_text = "Will use default q parameter (= {}) from config file for the Bayesian NHEJ inference " \
                              "(check CRISPECTOR paper for more details).".format(default_q)
     # Use default Binomial probability when can't estimate signal from on target.
-    if ref_df[ON_TARGET].sum() > 1:
+    n_on_target_site = 0
+    for site_name in list(ref_df[ref_df[ON_TARGET] == True][SITE_NAME]):
+        if '[' not in site_name:
+            n_on_target_site += 1
+    if n_on_target_site > 1:
         override_coin = True
         logger.warning("Experiment has Multiple on-target sites. {}".format(default_q_warning_text))
-    elif ref_df[ON_TARGET].sum() == 0:
+    elif n_on_target_site == 0:
         override_coin = True
         logger.warning("Experiment doesn't have on-target site. {}".format(default_q_warning_text))
     else:

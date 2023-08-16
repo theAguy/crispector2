@@ -71,10 +71,10 @@ def is_snp_in_pam_grna(ref_df):
 
                 for snp in snps_locus:
                     if PAM_window[0] <= snp <= PAM_window[1]:
-                        return f'one of the SNPs in site {site_name} is located inside the PAM! ' \
+                        return f'one of the SNPs in site {temp_general_site_name[:-1]} is located inside the PAM! ' \
                                'Make sure to examine the results carefully'
                     elif grna_window[0] <= snp <= grna_window[1]:
-                        return f'one of the SNPs in site {site_name} is located inside the gRNA! ' \
+                        return f'one of the SNPs in site {temp_general_site_name[:-1]} is located inside the gRNA! ' \
                                'Make sure to examine the results carefully'
 
                 sites_done.append(temp_general_site_name)

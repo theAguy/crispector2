@@ -111,6 +111,7 @@ def estimate_random_reads_editing_effect(dict_of_alleles, confidence_interval):
         return True
     return False
 
+
 #############################################################################################################
 #############################################################################################################
 
@@ -143,7 +144,7 @@ def _separate_random_reads_from_dfs(tables_data, re_run_sites):
                 # take the df
                 tx_df = tables_data[allele_name].tx_reads
                 # filter the random reads
-                random_tx_df = tx_df[tx_df[IS_RANDOM]==True]
+                random_tx_df = tx_df[tx_df[IS_RANDOM] == True]
                 # assign to the original site. combine with other alleles random reads
                 if site in random_tx.keys():
                     concat_df = pd.concat([random_tx[site], random_tx_df])
@@ -151,7 +152,7 @@ def _separate_random_reads_from_dfs(tables_data, re_run_sites):
                 else:
                     random_tx[site] = random_tx_df
                 # remove from the current df
-                random_index = tx_df[tx_df[IS_RANDOM]==True].index
+                random_index = tx_df[tx_df[IS_RANDOM] == True].index
                 tables_data[allele_name].tx_reads.drop(random_index, inplace=True)
 
             # if there are no random reads - pass this stage
@@ -163,7 +164,7 @@ def _separate_random_reads_from_dfs(tables_data, re_run_sites):
                 # take the df
                 mock_df = tables_data[allele_name].mock_reads
                 # filter the random reads
-                random_mock_df = mock_df[mock_df[IS_RANDOM]==True]
+                random_mock_df = mock_df[mock_df[IS_RANDOM] == True]
                 # assign to the original site. combine with other alleles random reads
                 if site in random_mock.keys():
                     concat_df = pd.concat([random_mock[site], random_mock_df])
@@ -171,7 +172,7 @@ def _separate_random_reads_from_dfs(tables_data, re_run_sites):
                 else:
                     random_mock[site] = random_mock_df
                 # remove from the current df
-                random_index = mock_df[mock_df[IS_RANDOM]==True].index
+                random_index = mock_df[mock_df[IS_RANDOM] == True].index
                 tables_data[allele_name].mock_reads.drop(random_index, inplace=True)
 
             # if there are no random reads - pass this stage
@@ -226,9 +227,9 @@ def _randomly_assign_random_reads_to_dfs(tables_d, random_tx_dict, random_mock_d
     return new_tables_d
 
 
-def _compute_best_stats(enable_substitutions, confidence_interval, donor, min_num_of_reads, override_noise_estimation,
-                       allele_ref_df, dfs_data, re_run_overlapping_sites, amplicon_min_score,
-                       translocation_amplicon_min_score, binom_p_d):
+def compute_best_stats(enable_substitutions, confidence_interval, donor, min_num_of_reads, override_noise_estimation,
+                        allele_ref_df, dfs_data, re_run_overlapping_sites, amplicon_min_score,
+                        translocation_amplicon_min_score, binom_p_d):
     """
     Takes all ata regarding alleles sites (random and not random reads) and compute new statistics
     :param enable_substitutions: Flag
@@ -278,9 +279,8 @@ def _compute_best_stats(enable_substitutions, confidence_interval, donor, min_nu
                 tables_d_allele[allele] = ModificationTables(tx_reads_d[allele], mock_reads_d[allele],
                                                              modifications_allele, row)
 
-    # # Compute binomial coin for all modification types
-    # binom_p_d, _, _ = compute_binom_p(tables_d_allele, modifications_allele, override_noise_estimation, allele_ref_df,
-    #                                   allele=True, n_on=n_on, e_on_d=e_on_d)
+    # Compute binomial coin for all modification types
+    binom_p_d = compute_binom_p(tables_d_allele, modifications_allele, override_noise_estimation, allele_ref_df)
     # TBD: delete from binom the log
     # Run crispector core algorithm on all sites
     result_summary_d_allele: AlgResult = dict()  # Algorithm result dictionary
@@ -423,12 +423,12 @@ def re_calculate_statistics(outdir, enable_substitutions, confidence_interval, d
                                                                  map_site_allele)
 
         # compute new statistics per each site that was modified randomly
-        tables_d_allele, result_summary_d_allele = _compute_best_stats(enable_substitutions, confidence_interval, donor,
-                                                                       min_num_of_reads, override_noise_estimation,
-                                                                       allele_ref_df, tables_d_w_random,
-                                                                       re_run_overlapping_sites,
-                                                                       amplicon_min_score,
-                                                                       translocation_amplicon_min_score, binom_p_d)
+        tables_d_allele, result_summary_d_allele = compute_best_stats(enable_substitutions, confidence_interval, donor,
+                                                                      min_num_of_reads, override_noise_estimation,
+                                                                      allele_ref_df, tables_d_w_random,
+                                                                      re_run_overlapping_sites,
+                                                                      amplicon_min_score,
+                                                                      translocation_amplicon_min_score, binom_p_d)
         # store the dfs and the statistics results
         tables_d_dict.append(tables_d_allele)
         result_summary_d_dict.append(result_summary_d_allele)

@@ -20,6 +20,7 @@ class Alignment:
     """
     All crispector alignment functionality - Needle-Wunsch, Shifting modification and so on.
     """
+
     def __init__(self, align_cfg: Dict, min_score: float, min_read_length_without_primers: int,
                  window_size: int):
         self._min_score = min_score
@@ -64,23 +65,24 @@ class Alignment:
 
         if reads_df.shape[0] == 0:
             return reads_df
-
-        # Align reads to their amplicon
-        self._logger.debug("Alignment for {} - Start Needleman-Wunsch alignment for all reads.".format(exp_name))
+        if not allele:
+            self._logger.debug("Alignment for {} - Start Needleman-Wunsch alignment for all reads.".format(exp_name))
         # TBD: added allele variable to here. maybe delete
+        # Align reads to their amplicon
         self._align_reads_to_amplicon(reads_df, reference)
 
         # Filter reads with low alignment score
         # TBD: This is a new line - confirm
         if not allele:
             self._filter_low_score_reads(reads_df, primers_len, output, exp_name, exp_type)
-
-        self._logger.debug("Alignment for {} - Needleman-Wunsch alignment done.".format(exp_name))
+            self._logger.debug("Alignment for {} - Needleman-Wunsch alignment done.".format(exp_name))
 
         # Shift modification into cut-site
-        self._logger.debug("Alignment for {} - Start shift modifications into cut-site.".format(exp_name))
+        if not allele:
+            self._logger.debug("Alignment for {} - Start shift modifications into cut-site.".format(exp_name))
         self._shift_modifications_into_cut_site(reads_df, cut_site)
-        self._logger.debug("Alignment for {} - Shift modifications into cut-site done.".format(exp_name))
+        if not allele:
+            self._logger.debug("Alignment for {} - Shift modifications into cut-site done.".format(exp_name))
 
         # Split read_df to all the different sites
         reads_df = reads_df.sort_values(by=[FREQ], ascending=False).reset_index(drop=True)
@@ -91,7 +93,8 @@ class Alignment:
         # Remove unnecessary columns
         reads_df.drop(columns=[REVERSED], inplace=True)
         # TBD: add different print for allelic case
-        self._logger.info("Alignment for {} - Done.".format(exp_name))
+        if not allele:
+            self._logger.info("Alignment for {} - Done.".format(exp_name))
 
         return reads_df
 
@@ -165,10 +168,9 @@ class Alignment:
         for col_name, col in new_cols_d.items():
             reads[col_name] = col
 
-
-    #-------------------------------#
+    # -------------------------------#
     ######### Private methods #######
-    #-------------------------------#
+    # -------------------------------#
     def _filter_low_score_reads(self, reads_df: ReadsDf, primers_len: int, output: Path, exp_name: str,
                                 exp_type: ExpType):
         """
@@ -184,10 +186,11 @@ class Alignment:
         # Find all indexes with lower score than the threshold
         unaligned_indexes = []
         max_score = reads_df[ALIGN_SCORE].max()
-        score_threshold = (self._min_score/100)*max_score
+        score_threshold = (self._min_score / 100) * max_score
 
         # Filter low alignment score
-        low_score_df = reads_df.loc[(reads_df[ALIGN_SCORE] < score_threshold) & (reads_df[CIGAR_LEN] > CIGAR_LEN_THRESHOLD)]
+        low_score_df = reads_df.loc[
+            (reads_df[ALIGN_SCORE] < score_threshold) & (reads_df[CIGAR_LEN] > CIGAR_LEN_THRESHOLD)]
 
         # Filter PRIMER-DIMER affect
         min_len = primers_len + self._min_primer_dimer_thresh
@@ -199,7 +202,8 @@ class Alignment:
         unaligned_reads_num = unaligned_df[FREQ].sum()
 
         self._logger.info("Alignment for {} - {:,} reads were filtered out ({:.2f}% of all reads)".format(exp_name,
-                          unaligned_reads_num, 100*unaligned_reads_num/total_reads_num))
+                                                                                                          unaligned_reads_num,
+                                                                                                          100 * unaligned_reads_num / total_reads_num))
 
         file = gzip.open(os.path.join(output, FILTERED_PATH[exp_type]), 'wt')
         for _, row in unaligned_df.iterrows():
@@ -346,12 +350,12 @@ class Alignment:
                             new_col_d[DEL_LEN][row_idx] = str(length)
                             new_col_d[DEL_START][row_idx] = str(pos_idx)
                             new_col_d[DEL_END][row_idx] = str(pos_idx + length - 1)
-                            new_col_d[DEL_BASE][row_idx] = reference[align_idx:align_idx+length]
+                            new_col_d[DEL_BASE][row_idx] = reference[align_idx:align_idx + length]
                         else:
                             new_col_d[DEL_LEN][row_idx] += ", {}".format(length)
                             new_col_d[DEL_START][row_idx] += ", {}".format(pos_idx)
                             new_col_d[DEL_END][row_idx] += ", {}".format(pos_idx + length - 1)
-                            new_col_d[DEL_BASE][row_idx] += ", {}".format(reference[align_idx:align_idx+length])
+                            new_col_d[DEL_BASE][row_idx] += ", {}".format(reference[align_idx:align_idx + length])
 
                 # Substations
                 elif indel_type == IndelType.SUB:
@@ -360,13 +364,16 @@ class Alignment:
                         if new_col_d[SUB_CNT][row_idx] is None:
                             new_col_d[SUB_CNT][row_idx] = int(length)
                             new_col_d[SUB_POS][row_idx] = str(pos_idx)
-                            new_col_d[SUB_POS][row_idx] += "".join([", {}".format(pos_idx+i) for i in range(1, length)])
+                            new_col_d[SUB_POS][row_idx] += "".join(
+                                [", {}".format(pos_idx + i) for i in range(1, length)])
                             new_col_d[SUB_BASE][row_idx] = read[align_idx]
-                            new_col_d[SUB_BASE][row_idx] += "".join([", {}".format(read[align_idx+i]) for i in range(1, length)])
+                            new_col_d[SUB_BASE][row_idx] += "".join(
+                                [", {}".format(read[align_idx + i]) for i in range(1, length)])
                         else:
                             new_col_d[SUB_CNT][row_idx] += int(length)
-                            new_col_d[SUB_POS][row_idx] += "".join([", {}".format(pos_idx+i) for i in range(length)])
-                            new_col_d[SUB_BASE][row_idx] += "".join([", {}".format(read[align_idx+i]) for i in range(length)])
+                            new_col_d[SUB_POS][row_idx] += "".join([", {}".format(pos_idx + i) for i in range(length)])
+                            new_col_d[SUB_BASE][row_idx] += "".join(
+                                [", {}".format(read[align_idx + i]) for i in range(length)])
 
                 # Insertions
                 elif indel_type == IndelType.INS:
@@ -375,11 +382,11 @@ class Alignment:
                         if new_col_d[INS_LEN][row_idx] is None:
                             new_col_d[INS_LEN][row_idx] = str(length)
                             new_col_d[INS_POS][row_idx] = str(pos_idx)
-                            new_col_d[INS_BASE][row_idx] = read[align_idx:align_idx+length]
+                            new_col_d[INS_BASE][row_idx] = read[align_idx:align_idx + length]
                         else:
                             new_col_d[INS_LEN][row_idx] += ", {}".format(length)
                             new_col_d[INS_POS][row_idx] += ", {}".format(pos_idx)
-                            new_col_d[INS_BASE][row_idx] += ", {}".format(read[align_idx:align_idx+length])
+                            new_col_d[INS_BASE][row_idx] += ", {}".format(read[align_idx:align_idx + length])
 
                 # update indexes and store aligned_cut_site
                 if indel_type != IndelType.INS:
@@ -423,7 +430,7 @@ class Alignment:
     ######### Indel Modification #########
     @staticmethod
     def _shift_indel_from_left(read_a: DNASeq, read_b: DNASeq, length: int, align_idx: int, alignment_cut_site: int) \
-        -> Tuple[DNASeq, bool]:
+            -> Tuple[DNASeq, bool]:
         """
         Shift indel from left to right if possible. only read_a is changed.
         For insertion - read_a is the reference and read_b is the read.
@@ -445,7 +452,7 @@ class Alignment:
         end_idx = align_idx + length  # Consider to replace the base at end_idx
         while end_idx < alignment_cut_site:
             if (read_a[end_idx] == read_b[start_idx]) or \
-               ((read_a[end_idx] != read_b[end_idx]) and (read_b[end_idx] != "-")):
+                    ((read_a[end_idx] != read_b[end_idx]) and (read_b[end_idx] != "-")):
                 shift += 1
             # Can't shift any further
             else:
@@ -465,7 +472,7 @@ class Alignment:
 
     @staticmethod
     def _shift_indel_from_right(read_a: DNASeq, read_b: DNASeq, length: int, align_idx: int, alignment_cut_site: int) \
-        -> Tuple[DNASeq, bool]:
+            -> Tuple[DNASeq, bool]:
         """
         Shift indel from right to left if possible. only read_a is changed.
         For insertion - read_a is the reference and read_b is the read.
@@ -486,7 +493,7 @@ class Alignment:
         end_idx = align_idx + length - 1
         while start_idx >= alignment_cut_site:
             if (read_a[start_idx] == read_b[end_idx]) or \
-               ((read_a[start_idx] != read_b[start_idx]) and (read_b[start_idx] != "-")):
+                    ((read_a[start_idx] != read_b[start_idx]) and (read_b[start_idx] != "-")):
                 shift += 1
             # Can't shift any further
             else:
@@ -591,27 +598,27 @@ class Alignment:
             if most_left is not None:
                 indel_type, length, align_idx = most_left  # most_left is type AlignedIndel
                 # shift indels with a region of twice the window size from the cut-site
-                if align_idx + length + (2*self._window_size) < aligned_cut_site:
+                if align_idx + length + (2 * self._window_size) < aligned_cut_site:
                     changed_left = False
                 elif indel_type == IndelType.DEL:
                     read, changed_left = self._shift_indel_from_left(read, reference, length, align_idx,
-                                                                    aligned_cut_site)
+                                                                     aligned_cut_site)
                 else:
                     reference, changed_left = self._shift_indel_from_left(reference, read, length, align_idx,
-                                                                         aligned_cut_site)
+                                                                          aligned_cut_site)
 
             # Shift most right modification to the cut-site
             if most_right is not None:
                 indel_type, length, align_idx = most_right  # most_left is type AlignedIndel
                 # shift indels with a region of twice the window size from the cut-site
-                if align_idx > aligned_cut_site + (2*self._window_size):
+                if align_idx > aligned_cut_site + (2 * self._window_size):
                     changed_right = False
                 elif indel_type == IndelType.DEL:
                     read, changed_right = self._shift_indel_from_right(read, reference, length, align_idx,
-                                                                      aligned_cut_site)
+                                                                       aligned_cut_site)
                 else:
                     reference, changed_right = self._shift_indel_from_right(reference, read, length, align_idx,
-                                                                           aligned_cut_site)
+                                                                            aligned_cut_site)
             # Mark read if it was changed
             if changed_right or changed_left:
                 # Compute new cigar_path
@@ -636,8 +643,8 @@ class LocalStrictAlignment:
     """
     All crispector alignment functionality - Needle-Wunsch, Shifting modification and so on.
     """
-    def __init__(self, align_cfg: Dict):
 
+    def __init__(self, align_cfg: Dict):
         # Create Aligner
 
         self._aligner = Align.PairwiseAligner()
@@ -649,21 +656,20 @@ class LocalStrictAlignment:
         self._aligner.target_end_gap_score = align_cfg["target_end_gap_score"]
         self._aligner.query_end_gap_score = align_cfg["query_end_gap_score"]
 
-    #-------------------------------#
+    # -------------------------------#
     ######### Private methods #######
-    #-------------------------------#
+    # -------------------------------#
 
     def _align_seq_to_read(self, relevant_read, window):
         return self._aligner.align(relevant_read, window)
-
 
 
 class LocalLooseAlignment:
     """
     All crispector alignment functionality - Needle-Wunsch, Shifting modification and so on.
     """
-    def __init__(self, align_cfg: Dict):
 
+    def __init__(self, align_cfg: Dict):
         # Create Aligner
 
         self._aligner = Align.PairwiseAligner()
@@ -675,9 +681,9 @@ class LocalLooseAlignment:
         self._aligner.target_end_gap_score = align_cfg["target_end_gap_score"]
         self._aligner.query_end_gap_score = align_cfg["query_end_gap_score"]
 
-    #-------------------------------#
+    # -------------------------------#
     ######### Private methods #######
-    #-------------------------------#
+    # -------------------------------#
 
     def _align_seq_to_read(self, relevant_read, window):
         return self._aligner.align(relevant_read, window)
@@ -687,8 +693,8 @@ class GlobalStrictAlignment:
     """
     All crispector alignment functionality - Needle-Wunsch, Shifting modification and so on.
     """
-    def __init__(self, align_cfg: Dict):
 
+    def __init__(self, align_cfg: Dict):
         # Create Aligner
 
         self._aligner = Align.PairwiseAligner()
@@ -700,12 +706,13 @@ class GlobalStrictAlignment:
         self._aligner.target_end_gap_score = align_cfg["target_end_gap_score"]
         self._aligner.query_end_gap_score = align_cfg["query_end_gap_score"]
 
-    #-------------------------------#
+    # -------------------------------#
     ######### Private methods #######
-    #-------------------------------#
+    # -------------------------------#
 
     def _align_seq_to_read(self, relevant_read, window):
         return self._aligner.align(relevant_read, window)
+
 
 def align_allele_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon_min_score):
     """
@@ -740,3 +747,32 @@ def align_allele_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon
             new_sites[site][allele][1] = new_allele_df
 
     return new_sites
+
+
+def align_random_df(reads_df, ref_df, amplicon_min_score, translocation_amplicon_min_score):
+    """
+    align df of allele to the new allele reference
+    :param: reads_df: The allele site DataFrames
+    :param: ref_df: the reference DateFrame
+    :param: amplicon_min_score: minimum score for alignment to the amplicon
+    :param: translocation_amplicon_min_score: minimum score fir translocation
+    :return: new_sites: returns all allele sites aligned to their amplicons
+    """
+
+    # set configuration and aligner for the alignment
+    _cfg = Configurator.get_cfg()
+    _aligner = Alignment(_cfg["alignment"], amplicon_min_score, translocation_amplicon_min_score,
+                         _cfg["NHEJ_inference"]["window_size"])
+
+    reads_align_df = dict()
+
+    # iterate over each new allele and re-align it
+    for allele_name, allele_df in reads_df.items():
+        cut_site = ref_df.loc[allele_name, CUT_SITE]
+        ref_amplicon = ref_df.loc[allele_name, REFERENCE]
+
+        new_allele_df = _aligner.align_reads(allele_df, ref_amplicon, cut_site,
+                                             None, None, allele_name, None, allele=True)
+        reads_align_df[allele_name] = new_allele_df
+
+    return reads_align_df

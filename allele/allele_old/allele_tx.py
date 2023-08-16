@@ -35,7 +35,6 @@ class AlleleForTx:
         self._new_tx_df = dict()
         self._sites_score = pd.DataFrame(columns=[SITE_NAME, AVG_SCORE])
         self.alleles_ref_reads = alleles_ref_reads
-        self.random_reads = dict()
 
         self._cfg = Configurator.get_cfg()
         # create alignment instances
@@ -100,18 +99,11 @@ class AlleleForTx:
                     tx_site_df.loc[i, ALIGN_SCORE] = max_score
                     tx_site_df.loc[i, IS_RANDOM] = is_random
 
-                # separate to random reads and not random
-                self.random_reads[tx_site_name] = tx_site_df[tx_site_df[IS_RANDOM] == True]
-                df_no_random = tx_site_df[tx_site_df[IS_RANDOM] == False]
-                # set threshold for percentage of random reads out of all reads. If more than that - do not report alleles
-                if sum(tx_site_df[tx_site_df[IS_RANDOM] == True][FREQ]) / sum(tx_site_df[FREQ]) > 0.5:  # TBD: make hyperparameter (0.5)
-                    self._logger.info("Site {} has to many random reads".format(tx_site_name))
-
                 ratios_dict = dict()
                 # set the new df for the tx allele
                 for allele_type, allele_info in list_sites_of_allele.items():
                     # get the tx ratios for this site
-                    tx_site_df_temp = df_no_random.loc[df_no_random[ALLELE] == allele_info[0]]
+                    tx_site_df_temp = tx_site_df.loc[tx_site_df[ALLELE] == allele_info[0]]
                     sum_reads = sum(list(tx_site_df_temp[FREQ]))
                     ratios_dict[allele_type] = sum_reads
                     # calculate the alignment average score. If less than one [TBD]

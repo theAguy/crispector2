@@ -222,7 +222,11 @@ TX_EDIT = "Edited reads"
 EDIT_PERCENT = "Editing Activity"
 CI_LOW = "CI_low"
 CI_HIGH = "CI_high"
+PAM_WINDOW = "PAM_window"
+GRNA_WINDOW = "gRNA_window"
 SUMMARY_RESULTS_TITLES = [SITE_NAME, ON_TARGET, MOCK_READ_NUM, TX_READ_NUM, TX_EDIT, EDIT_PERCENT, CI_LOW, CI_HIGH]
+SUMMARY_RESULTS_TITLES_FOR_ALLELES = [SITE_NAME, ON_TARGET, MOCK_READ_NUM, TX_READ_NUM, TX_EDIT, EDIT_PERCENT, CI_LOW,
+                                      CI_HIGH, PAM_WINDOW, GRNA_WINDOW]
 
 # TransResultDf columns
 SITE_A = "site A"
@@ -306,6 +310,5 @@ N = 'N'  # neutral nucleotide base
 AVG_SCORE = 'avg_score'
 ALLELE = 'allele'
 RANDOM_EDIT_READS = 'Random edited reads'
-PAM_WINDOW = 'PAM_window'
-GRNA_WINDOW = 'gRNA_window'
 STRAND = 'strand'
+RANDOM_NUMBER = 'random_number'

@@ -16,7 +16,7 @@ class AlleleForMock:
     Class to handle the allele case of the Mock
     """
 
-    def __init__(self, ratios, ref_df, max_poten_snvs, max_allele_mismatches, max_len_snv_ctc, random_percentage):
+    def __init__(self, ratios, ref_df, max_poten_snvs, max_allele_mismatches, max_len_snv_ctc):
         self._ref_df = ref_df
         self._ratios = ratios
         self.new_alleles = dict()
@@ -28,10 +28,7 @@ class AlleleForMock:
         self._max_potential_snvs = max_poten_snvs
         self._max_mm = max_allele_mismatches
         self._max_len_snv_ctc = max_len_snv_ctc
-        self._random_reads_threshold_percentage = random_percentage
 
-        # dict for random reads
-        self.random_reads = dict()
         # df that saves the ratios of nb over the whole process - mock before, after and tx
         self.df_mock_tx_snp_ratios = pd.DataFrame(
             columns=['site_name', 'mock_ratios_before', 'mock_ratios_after',
@@ -72,42 +69,36 @@ class AlleleForMock:
 
         # if the function finds SNPs
         if SNP:
-            # separate to random reads and not random
-            self.random_reads[self._site_name] = df[df[IS_RANDOM] == True]
-            df_no_random = df[df[IS_RANDOM] == False]
-            # set threshold for percentage of random reads out of all reads. If more than that - do not report alleles
-            if sum(df[df[IS_RANDOM] == True][FREQ]) / sum(df[FREQ]) > self._random_reads_threshold_percentage:
-                self._logger.info("Site {} has to many random reads".format(self._site_name))
-            else:
-                # iterate over all possible alleles
-                for allele in list(self._windows.keys()):
-                    # filter df for reads with the current snp and clean columns
-                    df_for_curr_allele = df_no_random.loc[df_no_random[SNP_PHASE] == allele]
-                    # get the most relevant amplicon for reference from df
-                    amplicon = self.alleles_ref_reads[site_name][allele]
-                    # amplicon2 = self._get_ref_amplicon(df_for_curr_allele, site_name)
-                    df_for_curr_allele = df_for_curr_allele.drop(labels=[SNP_PHASE, LEN, SNP_NUC_TYPE], axis=1)
-                    allele_window_list = self._windows[allele]
-                    # TBD: change the name to more relevant one
-                    _new_name = self._site_name + '_' + str(self._snp_locus) + '_' + allele
 
-                    # add list of:(new name, filtered df, snp positions, windows ,amplicon)
-                    if self._site_name not in self.new_alleles.keys():
-                        self.new_alleles[self._site_name] = dict()
-                    self.new_alleles[self._site_name][allele] = [  # TBD: maybe some values unnecessary. check
-                        _new_name,
-                        df_for_curr_allele,
-                        self._snp_locus,
-                        allele_window_list,
-                        amplicon
-                    ]
+            # iterate over all possible alleles
+            for allele in list(self._windows.keys()):
+                # filter df for reads with the current snp and clean columns
+                df_for_curr_allele = df.loc[df[SNP_PHASE] == allele]
+                # get the most relevant amplicon for reference from df
+                amplicon = self.alleles_ref_reads[site_name][allele]
+                # amplicon2 = self._get_ref_amplicon(df_for_curr_allele, site_name)
+                df_for_curr_allele = df_for_curr_allele.drop(labels=[SNP_PHASE, LEN, SNP_NUC_TYPE], axis=1)
+                allele_window_list = self._windows[allele]
+                # TBD: change the name to more relevant one
+                _new_name = self._site_name + '_' + str(self._snp_locus) + '_' + allele
 
-                # insert ratios to the self variable. TBD: move to the end and normalized by number of alleles
-                curr_mock_df = pd.DataFrame(data=[[self._site_name, self._nuc_distribution_before,
-                                                   self._nuc_distribution_after, None, self._number_of_alleles]],
-                                            columns=['site_name', 'mock_ratios_before',
-                                                     'mock_ratios_after', 'tx_ratios', 'number_of_alleles'])
-                self.df_mock_tx_snp_ratios = pd.concat([self.df_mock_tx_snp_ratios, curr_mock_df], ignore_index=True)
+                # add list of:(new name, filtered df, snp positions, windows ,amplicon)
+                if self._site_name not in self.new_alleles.keys():
+                    self.new_alleles[self._site_name] = dict()
+                self.new_alleles[self._site_name][allele] = [  # TBD: maybe some values unnecessary. check
+                    _new_name,
+                    df_for_curr_allele,
+                    self._snp_locus,
+                    allele_window_list,
+                    amplicon
+                ]
+
+            # insert ratios to the self variable. TBD: move to the end and normalized by number of alleles
+            curr_mock_df = pd.DataFrame(data=[[self._site_name, self._nuc_distribution_before,
+                                               self._nuc_distribution_after, None, self._number_of_alleles]],
+                                        columns=['site_name', 'mock_ratios_before',
+                                                 'mock_ratios_after', 'tx_ratios', 'number_of_alleles'])
+            self.df_mock_tx_snp_ratios = pd.concat([self.df_mock_tx_snp_ratios, curr_mock_df], ignore_index=True)
 
         return self.new_alleles
 
