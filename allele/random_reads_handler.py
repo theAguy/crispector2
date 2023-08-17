@@ -108,13 +108,13 @@ class RandomReadsHandler:
                 edit_reads = False
 
             if edit_reads:
-                for allele, edit_reads_count in editing_reads_per_allele[site].items():
-                    self._editing_ratios_d[site][allele] = edit_reads_count / total_edit_per_site_d[site]
+                for allele_tx, edit_reads_count in editing_reads_per_allele[site].items():
+                    self._editing_ratios_d[site][allele_tx] = edit_reads_count / total_edit_per_site_d[site]
 
-            for allele2, mock_read_count in mock_reads_per_allele[site].items():
-                self._mock_ratios_d[site][allele2] = mock_read_count / total_mock_per_site_d[site]
+            for allele_mock, mock_read_count in mock_reads_per_allele[site].items():
+                self._mock_ratios_d[site][allele_mock] = mock_read_count / total_mock_per_site_d[site]
                 if not edit_reads:
-                    self._editing_ratios_d[site][allele] = mock_read_count / total_mock_per_site_d[site]
+                    self._editing_ratios_d[site][allele_mock] = mock_read_count / total_mock_per_site_d[site]
 
 
     def _split_random_reads_according_to_ratios(self):
