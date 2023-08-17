@@ -90,8 +90,8 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'], max_content_width=12
               help="The percentage of reads that if the algorithm cannot decide to which allele to classify them, "
                    "this site won't be analyzed in the allele case")
 @click.option("--allele", is_flag=True, default=False, show_default=True,
-              help="Flag for analyzing alleles. The default is True, however if alleles are not needed, "
-                   "set the flag to False")
+              help="Flag for analyzing alleles. The default is False, however if alleles are  needed, "
+                   "set the flag")
 
 
 def main(**kwargs):
