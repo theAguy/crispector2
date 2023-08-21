@@ -36,6 +36,6 @@ setup(
     packages=['crispector', 'crispector.algorithm', 'crispector.config', 'crispector.input_processing',
               'crispector.modifications', 'crispector.report', 'crispector.utils'],
     url='https://github.com/theAguy/crispector2',
-    version='2.0.0',
+    version='2.0.1',
     zip_safe=False,
 )
