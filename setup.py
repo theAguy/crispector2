@@ -24,7 +24,7 @@ setup(
     description="CRISPECTOR2 - Genome Editing Analysis Tool, with allele extension",
     entry_points={
         'console_scripts': [
-            'crispector = crispector.cli:main',
+            'crispector = crispector2.cli:main',
         ],
     },
     python_requires='>=3.7',
@@ -36,6 +36,6 @@ setup(
     packages=['crispector', 'crispector.algorithm', 'crispector.config', 'crispector.input_processing',
               'crispector.modifications', 'crispector.report', 'crispector.utils'],
     url='https://github.com/theAguy/crispector2',
-    version='2.0.1',
+    version='2.0.2',
     zip_safe=False,
 )
