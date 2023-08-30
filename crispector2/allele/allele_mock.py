@@ -15,7 +15,6 @@ class AlleleForMock:
     """
     Class to handle the allele case of the Mock
     """
-
     def __init__(self, ratios, ref_df, max_poten_snvs, max_allele_mismatches, max_len_snv_ctc, random_percentage):
         self._ref_df = ref_df
         self._ratios = ratios
@@ -645,7 +644,19 @@ class AlleleForMock:
                             sub_scores_wo_CTC.append([x for i, x in enumerate(score) if i in new_best_indexes])
                     sums = np.sum(sub_scores_wo_CTC, axis=0)
                     # if all sums are equal - we need to try different approach
-                    if np.count_nonzero(np.array(sums) == min(sums)) > 1:
+                    if all(CTC_list):
+                        CTC_alignment = True
+                        ctc_sums = np.sum(sub_scores_w_CTC, axis=0)
+                        # if all sums are equal - choose randomly out of the option of new_best_indexes
+                        if np.count_nonzero(np.array(ctc_sums) == min(ctc_sums)) > 1:
+                            is_random = True
+                            best_index = random.choice(new_best_indexes)
+                            alignment_score = np.mean(scores, axis=0)[new_best_indexes.index(best_index)]
+                        # else - we have a better index in a sense of scoring, thus we will choose it.
+                        else:
+                            best_index = new_best_indexes[np.argmin(ctc_sums)]
+                            alignment_score = np.mean(scores, axis=0)[new_best_indexes.index(best_index)]
+                    elif np.count_nonzero(np.array(sums) == min(sums)) > 1:
                         # if there is a CTC between snps
                         if (sub_scores_w_CTC != sub_scores_wo_CTC) and (len(sub_scores_wo_CTC) > 0):
                             CTC_alignment = True
