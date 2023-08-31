@@ -93,37 +93,37 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/tx_trans_df', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_trans_df', 'wb')
         # pickle.dump(tx_trans_df, outfile)
         # outfile.close()
         #
-        # outfile = open('pickle/mock_trans_df', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_trans_df', 'wb')
         # pickle.dump(mock_trans_df, outfile)
         # outfile.close()
         #
-        # outfile = open('pickle/mock_reads_d_original', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_original', 'wb')
         # pickle.dump(mock_reads_d, outfile)
         # outfile.close()
         #
-        # outfile = open('pickle/tx_reads_d_original', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_original', 'wb')
         # pickle.dump(tx_reads_d, outfile)
         # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        # infile = open('pickle/tx_trans_df', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_trans_df', 'rb')
         # tx_trans_df = pickle.load(infile)
         # infile.close()
         #
-        # infile = open('pickle/mock_trans_df', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_trans_df', 'rb')
         # mock_trans_df = pickle.load(infile)
         # infile.close()
         #
-        # infile = open('pickle/mock_reads_d_original', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_original', 'rb')
         # mock_reads_d = pickle.load(infile)
         # infile.close()
         #
-        # infile = open('pickle/tx_reads_d_original', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_original', 'rb')
         # tx_reads_d = pickle.load(infile)
         # infile.close()
         ##############################################################################################
@@ -141,37 +141,37 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/mock_reads_d_allele_multi', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_allele_multi', 'wb')
         # pickle.dump(mock_reads_d_allele, outfile)
         # outfile.close()
         #
-        # outfile = open('pickle/df_mock_tx_snp_ratios_multi', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/df_mock_tx_snp_ratios_multi', 'wb')
         # pickle.dump(Alleles.df_mock_tx_snp_ratios, outfile)
         # outfile.close()
         #
-        # outfile = open('pickle/alleles_ref_reads', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/alleles_ref_reads', 'wb')
         # pickle.dump(Alleles.alleles_ref_reads, outfile)
         # outfile.close()
         #
-        # outfile = open('pickle/mock_random_reads_d', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_random_reads_d', 'wb')
         # pickle.dump(mock_random_reads_d, outfile)
         # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        # infile = open('pickle/mock_reads_d_allele_multi', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_allele_multi', 'rb')
         # mock_reads_d_allele = pickle.load(infile)
         # infile.close()
         #
-        # infile = open('pickle/df_mock_tx_snp_ratios_multi', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/df_mock_tx_snp_ratios_multi', 'rb')
         # Alleles._df_mock_tx_snp_ratios = pickle.load(infile)
         # infile.close()
         #
-        # infile = open('pickle/alleles_ref_reads', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/alleles_ref_reads', 'rb')
         # Alleles.alleles_ref_reads = pickle.load(infile)
         # infile.close()
         #
-        # infile = open('pickle/mock_random_reads_d', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_random_reads_d', 'rb')
         # mock_random_reads_d = pickle.load(infile)
         # infile.close()
 
@@ -199,13 +199,13 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/mock_reads_d_final_multi', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_final_multi', 'wb')
         # pickle.dump(mock_reads_d, outfile)
         # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        # infile = open('pickle/mock_reads_d_final_multi', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_final_multi', 'rb')
         # mock_reads_d = pickle.load(infile)
         # infile.close()
         ##############################################################################################
@@ -221,21 +221,21 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/tx_reads_d_allele', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_allele', 'wb')
         # pickle.dump(tx_reads_d_allele, outfile)
         # outfile.close()
         #
-        # outfile = open('pickle/tx_random_reads_d', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_random_reads_d', 'wb')
         # pickle.dump(tx_random_reads_d, outfile)
         # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        # infile = open('pickle/tx_reads_d_allele', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_allele', 'rb')
         # tx_reads_d_allele = pickle.load(infile)
         # infile.close()
         #
-        # infile = open('pickle/tx_random_reads_d', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_random_reads_d', 'rb')
         # tx_random_reads_d = pickle.load(infile)
         # infile.close()
         ##############################################################################################
@@ -259,21 +259,21 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/aligned_tx_reads_d_allele', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/aligned_tx_reads_d_allele', 'wb')
         # pickle.dump(aligned_tx_reads_d_allele, outfile)
         # outfile.close()
         #
-        # outfile = open('pickle/tx_reads_d_final', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_final', 'wb')
         # pickle.dump(tx_reads_d, outfile)
         # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        # infile = open('pickle/aligned_tx_reads_d_allele', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/aligned_tx_reads_d_allele', 'rb')
         # aligned_tx_reads_d_allele = pickle.load(infile)
         # infile.close()
         #
-        # infile = open('pickle/tx_reads_d_final', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_final', 'rb')
         # tx_reads_d = pickle.load(infile)
         # infile.close()
         ##############################################################################################
@@ -292,13 +292,13 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/allele_ref_df', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/allele_ref_df', 'wb')
         # pickle.dump(aligned_tx_reads_d_allele, outfile)
         # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        # infile = open('pickle/allele_ref_df', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/allele_ref_df', 'rb')
         # allele_ref_df = pickle.load(infile)
         # infile.close()
         # allele_ref_df = pd.DataFrame.from_dict(allele_ref_df)
@@ -330,21 +330,21 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         ##############################################################################################
         # OUTFILE
         ##############################################################################################
-        # outfile = open('pickle/tables_d', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tables_d', 'wb')
         # pickle.dump(tables_d, outfile)
         # outfile.close()
         #
-        # outfile = open('pickle/override_noise_estimation', 'wb')
+        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/override_noise_estimation', 'wb')
         # pickle.dump(override_noise_estimation, outfile)
         # outfile.close()
         ##############################################################################################
         # INFILE
         ##############################################################################################
-        # infile = open('pickle/tables_d', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tables_d', 'rb')
         # tables_d = pickle.load(infile)
         # infile.close()
         #
-        # infile = open('pickle/override_noise_estimation', 'rb')
+        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/override_noise_estimation', 'rb')
         # override_noise_estimation = pickle.load(infile)
         # infile.close()
 

@@ -490,30 +490,30 @@ class AlleleForMock:
         # if only one snp, then it has to be random
         if one_snp:  # TBD: check if needed. Maybe redundant (966). It's NOT!!!
             for i, row in reads_with_no_alleles.iterrows():
-                snp_type = random.choice(allele_phases)
-                reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
+                # snp_type = random.choice(allele_phases)
+                # reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
                 reads_with_no_alleles.at[i, IS_RANDOM] = True
         else:
             windows_list = list(self._windows.values())
             for i, row in reads_with_no_alleles.iterrows():
                 # if did not find any snps = meaning that there is no chance of finding "best alignment" - random
-                if len(row[SNP_PHASE]) == 0:
-                    snp_type = random.choice(allele_phases)
+                # if len(row[SNP_PHASE]) == 0:
+                    # snp_type = random.choice(allele_phases)
+                    # reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
+                    # reads_with_no_alleles.at[i, IS_RANDOM] = True
+                # else:
+                seq = row[ALIGNMENT_W_DEL]
+                # find the best allele to assign this read. return best index of allele list
+                best_index, score, _, _ = self._best_index_wrapper(seq, windows_list)
+                # if there is better alignment between the alleles - set it
+                if score is not None:
+                    snp_type = allele_phases[best_index]
                     reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
-                    reads_with_no_alleles.at[i, IS_RANDOM] = True
+                # else - random assignment
                 else:
-                    seq = row[ALIGNMENT_W_DEL]
-                    # find the best allele to assign this read. return best index of allele list
-                    best_index, score, _, _ = self._best_index_wrapper(seq, windows_list)
-                    # if there is better alignment between the alleles - set it
-                    if score is not None:
-                        snp_type = allele_phases[best_index]
-                        reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
-                    # else - random assignment
-                    else:
-                        snp_type = random.choice(allele_phases)
-                        reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
-                        reads_with_no_alleles.at[i, IS_RANDOM] = True
+                    # snp_type = random.choice(allele_phases)
+                    # reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
+                    reads_with_no_alleles.at[i, IS_RANDOM] = True
 
         reads_with_alleles = pd.concat([reads_with_alleles, reads_with_no_alleles])
 
