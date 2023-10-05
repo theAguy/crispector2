@@ -1,6 +1,6 @@
 from crispector2.utils.constants_and_types import IS_EDIT, FREQ, TX_READ_NUM, MOCK_READ_NUM, ON_TARGET, CUT_SITE, AlgResult, \
     PAM_WINDOW, GRNA_WINDOW, RANDOM_NUMBER, ALLELE, SNP_PHASE, RANDOM_EDIT_READS, TX_EDIT, EDIT_PERCENT, CI_LOW, \
-    CI_HIGH
+    CI_HIGH, REFERENCE
 import numpy as np
 import pandas as pd
 import random
@@ -58,6 +58,58 @@ class RandomReadsHandler:
         # Set logger
         logger = LoggerWrapper.get_logger()
         self._logger = logger
+
+    def get_info_for_alleles_plots(self, alleles_details):
+        info_allele_plot = dict()
+        for parent_site, child_alleles in alleles_details.items():
+            if len(child_alleles) == len(self._mock_ratios_d[parent_site]):
+                info_allele_plot[parent_site] = dict()
+                for allele_site_char, allele_site_info in child_alleles.items():
+                    site_name = allele_site_info[0]
+                    snvs = allele_site_info[2]
+                    ref_amp = self._allele_ref_df.at[site_name, REFERENCE]
+                    pam = self._allele_ref_df.at[site_name, PAM_WINDOW]
+                    grna = self._allele_ref_df.at[site_name, GRNA_WINDOW]
+                    freq = self._mock_ratios_d[parent_site][site_name]
+                    info_allele_plot[parent_site][site_name] = {'RefAmp': ref_amp, 'frequency': freq,
+                                                                'snvs': snvs, 'pam': pam, 'grna': grna}
+
+        return info_allele_plot
+
+    def _random_reads_statistics_and_warnings(self):
+        random_reads_for_analysis_d = dict()
+        for site_to_check in self._tx_random_reads.keys():
+            random_reads_for_analysis_d[site_to_check] = {'total_mock': 0,
+                                                          'total_tx': 0,
+                                                          'random_mock': 0,
+                                                          'random_tx': 0,
+                                                          'random_mock_freq': 0,
+                                                          'random_tx_freq': 0}
+            try:
+                total_site_mock_reads = sum(self._tables_d[site_to_check].mock_reads[FREQ])
+                total_site_tx_reads = sum(self._tables_d[site_to_check].tx_reads[FREQ])
+                random_tx_freq = sum(self._tx_random_reads[site_to_check][FREQ])
+                random_mock_freq = 0
+                if site_to_check in self._mock_random_reads.keys():
+                    random_mock_freq = sum(self._mock_random_reads[site_to_check][FREQ])
+                per_random_mock = round((random_mock_freq / total_site_mock_reads) * 100, 2)
+                per_random_tx = round((random_tx_freq / total_site_tx_reads) * 100, 2)
+
+                random_reads_for_analysis_d[site_to_check]['total_mock'] = total_site_mock_reads
+                random_reads_for_analysis_d[site_to_check]['total_tx'] = total_site_tx_reads
+                random_reads_for_analysis_d[site_to_check]['random_mock'] = random_mock_freq
+                random_reads_for_analysis_d[site_to_check]['random_tx'] = random_tx_freq
+                random_reads_for_analysis_d[site_to_check]['random_mock_freq'] = per_random_mock
+                random_reads_for_analysis_d[site_to_check]['random_tx_freq'] = per_random_tx
+
+                if per_random_mock > 1 or per_random_tx > 1:
+                    self._logger.warning("Site {} - Has {}% random mock reads and {}% random tx reads.".format(
+                        site_to_check, per_random_mock, per_random_tx))
+            except:
+                continue
+
+        random_for_analysis_df = pd.DataFrame.from_dict(random_reads_for_analysis_d, orient='index')
+        # random_for_analysis_df.to_csv(os.path.join(self._outdir, 'random_reads_stats.csv'))
 
     def map_alleles_to_site(self, allele_info_d):
         """
@@ -189,9 +241,11 @@ class RandomReadsHandler:
             for allele_name, allele_df in aligned_mock_d_allele.items():
                 mock_w_random = pd.concat([self._tables_d[allele_name].mock_reads, allele_df])
                 new_tables_d[allele_name].mock_reads = mock_w_random
+                new_tables_d[allele_name].n_reads_mock = sum(new_tables_d[allele_name].mock_reads[FREQ])
             for allele_name, allele_df in aligned_tx_d_allele.items():
                 tx_w_random = pd.concat([self._tables_d[allele_name].tx_reads, allele_df])
                 new_tables_d[allele_name].tx_reads = tx_w_random
+                new_tables_d[allele_name].n_reads_tx = sum(new_tables_d[allele_name].tx_reads[FREQ])
 
         return new_tables_d
 
@@ -500,6 +554,7 @@ class RandomReadsHandler:
         return best_tables_d, best_results_summary
 
     def run_initial_assigner(self):
+        self._random_reads_statistics_and_warnings()
         self._calc_mock_and_editing_ratios()
         for site in self._editing_ratios_d.keys():
             random_mock = self._parse_freq_df(self._mock_random_reads[site])

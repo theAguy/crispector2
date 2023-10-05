@@ -77,6 +77,14 @@ class ModificationTables:
     def mock_reads(self, value):
         self._mock_reads = value
 
+    @n_reads_tx.setter
+    def n_reads_tx(self, value):
+        self._n_reads_tx = value
+
+    @n_reads_mock.setter
+    def n_reads_mock(self, value):
+        self._n_reads_mock = value
+
     def _create_modification_tables_and_distribution(self):
         """
         Function create modification tables and pointers to ReadsDf for all modification types.

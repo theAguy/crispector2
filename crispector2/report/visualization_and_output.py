@@ -466,7 +466,7 @@ def plot_distribution_of_edit_events(tables: ModificationTables, cut_site: int, 
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
-        fig.savefig(os.path.join(output, 'distribution_of_edit_events.png'), bbox_inches='tight', dpi=dpi)
+        fig.savefig(os.path.join(output, 'distribution_of_edit_events.png'), bbox_inches='tight', dpi=1200)
         fig.savefig(os.path.join(output, 'distribution_of_edit_events.svg'), box_inches='tight')
         plt.close(fig)
 

@@ -7,9 +7,9 @@ from crispector2.input_processing.utils import read_exp_config_and_check_input
 from crispector2.utils.exceptions import FastpRunTimeError, SgRNANotInReferenceSequence, \
     ConfiguratorIsCalledBeforeInitConfigPath, PriorPositionHasWrongLength, UnknownAlignmentChar, \
     AlignerSubstitutionDoesntExist, ClassificationFailed, BadSgRNAChar, BadReferenceAmpliconChar, BadInputError
-from crispector2.utils.constants_and_types import Path, welcome_msg, FREQ, TX_READ_NUM, MOCK_READ_NUM, SITE_NAME, ON_TARGET, \
+from crispector2.utils.constants_and_types import Path, welcome_msg, FREQ, TX_READ_NUM, MOCK_READ_NUM, SITE_NAME, \
     CUT_SITE, AlgResult, OUTPUT_DIR, SUMMARY_RESULTS_TITLES, AlgResultDf, DONOR, PAM_WINDOW, GRNA_WINDOW, EDIT_PERCENT,\
-    SUMMARY_RESULTS_TITLES_FOR_ALLELES
+    SUMMARY_RESULTS_TITLES_FOR_ALLELES, REFERENCE, ON_TARGET
 from crispector2.report.html_report import create_final_html_report
 from crispector2.input_processing.input_processing import InputProcessing
 import traceback
@@ -380,47 +380,61 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
             else:
                 logger.debug("Site {} - Editing activity is {:.2f}".format(site, result_summary_d[site][EDIT_PERCENT]))
         ##############################################################################################################
+        # # info for alleles plot
+        # info_allele_plot = dict()
+        # for parent_site, child_alleles in Alleles.new_alleles.items():
+        #     info_allele_plot[parent_site] = dict()
+        #     for allele_site_char, allele_site_info in child_alleles.items():
+        #         site_name = allele_site_info[0]
+        #         print(site_name)
+        #         snvs = allele_site_info[2]
+        #         ref_amp = allele_ref_df.at[site_name, REFERENCE]
+        #         pam = allele_ref_df.at[site_name, PAM_WINDOW]
+        #         grna = allele_ref_df.at[site_name, GRNA_WINDOW]
+        #         freq = None
+        #         info_allele_plot[parent_site][site_name] = {'RefAmp': ref_amp, 'frequency': freq, 'snvs': snvs,
+        #                                                     'pam': pam,
+        #                                                     'grna': grna}
         # editing activity with no randomness
-        random_reads_for_analysis_d = dict()
-        for results_key, results_value in result_summary_d.items():
-            if '[' in results_key:
-                EA = round(result_summary_d[results_key][EDIT_PERCENT],2)
-                logger.info("Site {} - Has {}% Before Random Reads.".format(results_key, EA))
-        for site_to_check in tx_random_reads_d.keys():
-            random_reads_for_analysis_d[site_to_check] = {'total_mock': 0,
-                                                          'total_tx': 0,
-                                                          'random_mock': 0,
-                                                          'random_tx': 0,
-                                                          'random_mock_freq': 0,
-                                                          'random_tx_freq': 0}
-            total_site_mock_reads = sum(tables_d[site_to_check].mock_reads[FREQ])
-            total_site_tx_reads = sum(tables_d[site_to_check].tx_reads[FREQ])
-            random_tx_freq = sum(tx_random_reads_d[site_to_check][FREQ])
-            random_mock_freq = 0
-            if site_to_check in mock_random_reads_d.keys():
-                random_mock_freq = sum(mock_random_reads_d[site_to_check][FREQ])
-            per_random_mock = round((random_mock_freq / total_site_mock_reads) * 100, 2)
-            per_random_tx = round((random_tx_freq / total_site_tx_reads) * 100, 2)
-
-            random_reads_for_analysis_d[site_to_check]['total_mock'] = total_site_mock_reads
-            random_reads_for_analysis_d[site_to_check]['total_tx'] = total_site_tx_reads
-            random_reads_for_analysis_d[site_to_check]['random_mock'] = random_mock_freq
-            random_reads_for_analysis_d[site_to_check]['random_tx'] = random_tx_freq
-            random_reads_for_analysis_d[site_to_check]['random_mock_freq'] = per_random_mock
-            random_reads_for_analysis_d[site_to_check]['random_tx_freq'] = per_random_tx
-
-        random_for_analysis_df = pd.DataFrame.from_dict(random_reads_for_analysis_d, orient='index')
-        random_for_analysis_df.to_csv(os.path.join(output, 'random_reads_stats.csv'))
-        # logger.info("Site {} - Has {}% random mock reads.".format(site_to_check, per_random_mock))
-        # logger.info("Site {} - Has {}% random tx reads.".format(site_to_check, per_random_tx))
-        # logger.info("Site {} - Has {} random mock reads.".format(site_to_check, random_mock_freq))
-        # logger.info("Site {} - Has {} random tx reads.".format(site_to_check, random_tx_freq))
-        # for table_site in tables_d.keys():
-        #     if site_to_check in table_site:
-        #         mock_reads_number = sum(tables_d[table_site].mock_reads[FREQ])
-        #         tx_reads_number = sum(tables_d[table_site].tx_reads[FREQ])
-        #         logger.info("Site {} - Has {} mock reads.".format(table_site, mock_reads_number))
-        #         logger.info("Site {} - Has {} tx reads.".format(table_site, tx_reads_number))
+        # for results_key, results_value in result_summary_d.items():
+        #     try:
+        #         if '[' in results_key:
+        #             EA = round(result_summary_d[results_key][EDIT_PERCENT],2)
+        #             logger.info("Site {} - Has {}% Before Random Reads.".format(results_key, EA))
+        #     except:
+        #         continue
+        # random_reads_for_analysis_d = dict()
+        # for site_to_check in tx_random_reads_d.keys():
+        #     random_reads_for_analysis_d[site_to_check] = {'total_mock': 0,
+        #                                                   'total_tx': 0,
+        #                                                   'random_mock': 0,
+        #                                                   'random_tx': 0,
+        #                                                   'random_mock_freq': 0,
+        #                                                   'random_tx_freq': 0}
+        #     try:
+        #         total_site_mock_reads = sum(tables_d[site_to_check].mock_reads[FREQ])
+        #         total_site_tx_reads = sum(tables_d[site_to_check].tx_reads[FREQ])
+        #         random_tx_freq = sum(tx_random_reads_d[site_to_check][FREQ])
+        #         random_mock_freq = 0
+        #         if site_to_check in mock_random_reads_d.keys():
+        #             random_mock_freq = sum(mock_random_reads_d[site_to_check][FREQ])
+        #         per_random_mock = round((random_mock_freq / total_site_mock_reads) * 100, 2)
+        #         per_random_tx = round((random_tx_freq / total_site_tx_reads) * 100, 2)
+        #
+        #         random_reads_for_analysis_d[site_to_check]['total_mock'] = total_site_mock_reads
+        #         random_reads_for_analysis_d[site_to_check]['total_tx'] = total_site_tx_reads
+        #         random_reads_for_analysis_d[site_to_check]['random_mock'] = random_mock_freq
+        #         random_reads_for_analysis_d[site_to_check]['random_tx'] = random_tx_freq
+        #         random_reads_for_analysis_d[site_to_check]['random_mock_freq'] = per_random_mock
+        #         random_reads_for_analysis_d[site_to_check]['random_tx_freq'] = per_random_tx
+        #
+        #         logger.warning("Site {} - Has {}% random mock reads.".format(site_to_check, per_random_mock))
+        #         logger.warning("Site {} - Has {}% random tx reads.".format(site_to_check, per_random_tx))
+        #     except:
+        #         continue
+        #
+        # random_for_analysis_df = pd.DataFrame.from_dict(random_reads_for_analysis_d, orient='index')
+        # random_for_analysis_df.to_csv(os.path.join(output, 'random_reads_stats.csv'))
         ##############################################################################################################
         if allele:
             # handle the random reads that weren't assigned to alleles
@@ -433,12 +447,18 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
             tables_d_w_random, result_summary_d_w_random = random_reads_handler.run_initial_assigner()
             # section of handling low quality statistics of alleles
             best_tables_d, best_result_summary_d = random_reads_handler.run_best_assigner(result_summary_d_w_random)
+            # get information for allele plots
+            allele_info_for_plot = random_reads_handler.get_info_for_alleles_plots(Alleles.new_alleles)
 
             if best_tables_d:
                 for site, site_result in best_result_summary_d.items():
                     result_summary_d[site] = site_result
                 for site, mod_info in best_tables_d.items():
                     tables_d[site] = mod_info
+
+            else:
+                result_summary_d = result_summary_d_w_random
+                tables_d = tables_d_w_random
 
         # Convert result_summary dict to DataFrame
         summary_df: AlgResultDf = pd.DataFrame.from_dict(result_summary_d, orient='index')
