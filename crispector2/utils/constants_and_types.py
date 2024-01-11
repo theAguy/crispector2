@@ -222,8 +222,8 @@ TX_EDIT = "Edited reads"
 EDIT_PERCENT = "Editing Activity"
 CI_LOW = "CI_low"
 CI_HIGH = "CI_high"
-PAM_WINDOW = "PAM_window"
-GRNA_WINDOW = "gRNA_window"
+PAM_WINDOW = 'PAM_window'
+GRNA_WINDOW = 'gRNA_window'
 SUMMARY_RESULTS_TITLES = [SITE_NAME, ON_TARGET, MOCK_READ_NUM, TX_READ_NUM, TX_EDIT, EDIT_PERCENT, CI_LOW, CI_HIGH]
 SUMMARY_RESULTS_TITLES_FOR_ALLELES = [SITE_NAME, ON_TARGET, MOCK_READ_NUM, TX_READ_NUM, TX_EDIT, EDIT_PERCENT, CI_LOW,
                                       CI_HIGH, PAM_WINDOW, GRNA_WINDOW]
@@ -252,7 +252,9 @@ ON_TARGET_COLOR = "#39ad48"
 # html constants
 DISCARDED_SITES = "discarded_sites"
 EDIT_SECTION = "edit_section"
+EDITING_ACTIVITY_ALL = "editing_activity_all"
 EDITING_ACTIVITY = "editing_activity"
+EDITING_ACTIVITY_ALLELE_ONLY = "editing_activity_allele_only"
 W = "width"
 H = "height"
 PLOT_PATH = "plot_path"

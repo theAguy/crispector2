@@ -7,7 +7,7 @@ from setuptools import setup
 
 requirements = ['Click>=7.0', 'matplotlib >= 3.1.2', 'seaborn>=0.9.0','pyyaml>=5.1.2', 'plotly>=4.3.0',
                 'numpy>=1.12.1', 'pandas>=0.24.2', 'biopython>=1.74', 'scipy>=1.2.1', 'statsmodels',
-                'jinja2', 'tqdm>=4.66.0']
+                'jinja2', 'tqdm>=4.66.0', 'mpmath>=1.3.0']
 
 setup(
     author="Guy Assa",
@@ -36,6 +36,6 @@ setup(
     packages=['crispector2', 'crispector2.algorithm', 'crispector2.allele', 'crispector2.config',
               'crispector2.input_processing', 'crispector2.modifications', 'crispector2.report', 'crispector2.utils'],
     url='https://github.com/theAguy/crispector2',
-    version='2.0.6',
+    version='2.0.7',
     zip_safe=False,
 )
