@@ -4,11 +4,11 @@ import pandas
 import numpy as np
 
 welcome_msg = "\n\
- CCCCC  RRRRRR  IIIII  SSSSS  PPPPPP  EEEEEEE  CCCCC  TTTTTTT  OOOOO  RRRRRR\n\
-CC    C RR   RR  III  SS      PP   PP EE      CC    C   TTT   OO   OO RR   RR\n\
-CC      RRRRRR   III   SSSSS  PPPPPP  EEEEE   CC        TTT   OO   OO RRRRRR\n\
-CC    C RR  RR   III       SS PP      EE      CC    C   TTT   OO   OO RR  RR\n\
- CCCCC  RR   RR IIIII  SSSSS  PP      EEEEEEE  CCCCC    TTT    OOOOO  RR   RR\n\
+ CCCCC  RRRRRR  IIIII  SSSSS  PPPPPP  EEEEEEE  CCCCC  TTTTTTT  OOOOO  RRRRRR    222222   000000\n\
+CC    C RR   RR  III  SS      PP   PP EE      CC    C   TTT   OO   OO RR   RR       22   00  00\n\
+CC      RRRRRR   III   SSSSS  PPPPPP  EEEEE   CC        TTT   OO   OO RRRRRR    22222    00  00\n\
+CC    C RR  RR   III       SS PP      EE      CC    C   TTT   OO   OO RR  RR    22       00  00\n\
+ CCCCC  RR   RR IIIII  SSSSS  PP      EEEEEEE  CCCCC    TTT    OOOOO  RR   RR   222222 o 000000\n\
 \n\
               CRISPR/CAS9 Off-Target Analysis From NGS Data\n"
 

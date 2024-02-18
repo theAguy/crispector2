@@ -476,7 +476,7 @@ class RandomReadsHandler:
                 for i, txt in enumerate(label):
                     plt.annotate(txt, (x[i], y[i]))
                 plt.title(f'The medoid of site {site} is: {medoid}')
-                plt.savefig(os.path.join(self._outdir, f'medoid_{site}.png'), box_inches='tight')
+                plt.savefig(os.path.join(self._outdir, f'medoid_{site}.png'), bbox_inches='tight')
                 plt.close()
                 plt.clf()
 

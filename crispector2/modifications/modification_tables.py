@@ -95,7 +95,7 @@ class ModificationTables:
         for idx, indel_type in enumerate(self._modifications.types):
             # Insertions are between positions (so they have an extra item)
             table_size = len(self._amplicon) + 1 if indel_type == IndelType.INS else len(self._amplicon)
-            self._tables[idx] = np.zeros((2, table_size), dtype=np.int)
+            self._tables[idx] = np.zeros((2, table_size), dtype=np.int64)
             self._pointers[idx] = defaultdict(list)
 
         # Fill the tables

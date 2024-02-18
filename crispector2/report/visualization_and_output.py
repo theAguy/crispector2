@@ -1,11 +1,11 @@
 from crispector2.utils.constants_and_types import SITE_NAME, IndelType, Path, FREQ, IS_EDIT, TX_READ_NUM, \
     MOCK_READ_NUM, TX_EDIT, EDIT_PERCENT, CI_LOW, CI_HIGH, READ_LEN_SIDE, ALIGN_CUT_SITE, ALIGNMENT_W_INS, \
     ALIGNMENT_W_DEL, POS_IDX_E, POS_IDX_S, INDEL_TYPE, ExpType, ON_TARGET, IsEdit, C_TX, C_MOCK, \
-    OFF_TARGET_COLOR, ON_TARGET_COLOR, OUTPUT_DIR, DISCARDED_SITES, \
-    EDITING_ACTIVITY, PLOT_PATH, TITLE, W, H, PDF_PATH, READING_STATS, MAPPING_STATS, MAPPING_PER_SITE, \
-    FASTP_DIR, FASTP_TX_PATH, FASTP_MOCK_PATH, RESULT_TABLE, TAB_DATA, LOG_PATH, TransDf, AlgResultDf, \
+    SUMMARY_RESULTS_TITLES, OFF_TARGET_COLOR, ON_TARGET_COLOR, OUTPUT_DIR, DISCARDED_SITES, \
+    EDITING_ACTIVITY, EDITING_ACTIVITY_ALL, EDITING_ACTIVITY_ALLELE_ONLY, PLOT_PATH, TITLE, W, H, PDF_PATH, PAGE_TITLE, READING_STATS, MAPPING_STATS, MAPPING_PER_SITE, \
+    FASTP_DIR, FASTP_TX_PATH, FASTP_MOCK_PATH, RESULT_TABLE, TAB_DATA, HTML_SITES, LOG_PATH, TransDf, AlgResultDf, \
     TransResultDf, TRANS_FDR, SITE_A, SITE_B, TX_TRANS_READ, TRANSLOCATIONS, TX_TRANS_PATH, MOCK_TRANS_PATH, \
-    TRANS_RES_TAB, TRANS_HEATMAP_TAB, EDIT_SECTION, MOD_SECTION, CLS_RES_SECTION, CLS_RES_INS, \
+    TRANS_RES_TAB, TRANS_HEATMAP_TAB, TRANS_RESULTS_TITLES, EDIT_SECTION, MOD_SECTION, CLS_RES_SECTION, CLS_RES_INS, \
     CLS_RES_DEL, CLS_RES_MIX, MOD_DIST, EDIT_DIST, EDIT_SIZE_DIST, READ_SECTION, READ_EDIT, READ_MOCK_ALL, READ_TX_ALL, \
     FILTERED_PATH, READ_TX_FILTER, READ_MOCK_FILTER, HTML_SITES, HTML_SITES_NAME_LIST, REPORT_PATH, LOGO_PATH, \
     EDIT_TEXT, UNBALANCED_READ_WARNING, UNMATCHED_PATH, UNMATCHED_TX_PATH, UNMATCHED_MOCK_PATH
@@ -20,6 +20,7 @@ from crispector2.modifications.modification_tables import ModificationTables
 import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot as plt
+from matplotlib import ticker as ticker
 import seaborn as sns #
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -28,6 +29,7 @@ from crispector2.utils.logger import LoggerWrapper
 from copy import deepcopy
 from matplotlib.collections import QuadMesh
 import shutil
+import re
 
 
 def create_site_output(algorithm: CoreAlgorithm, modifications: ModificationTypes, mod_table: ModificationTables,
@@ -103,7 +105,7 @@ def create_site_output(algorithm: CoreAlgorithm, modifications: ModificationType
 def create_experiment_output(result_df: AlgResultDf, tx_trans_df: TransDf, mock_trans_df: TransDf,
                              trans_result_df: TransResultDf, input_processing: InputProcessing, min_num_of_reads: int,
                              confidence_interval: float, editing_threshold: float, translocation_p_value: float,
-                             output: Path, donor: bool):
+                             output: Path, donor: bool, allele: bool):
 
     html_d = dict()  # html parameters dict
 
@@ -113,7 +115,13 @@ def create_experiment_output(result_df: AlgResultDf, tx_trans_df: TransDf, mock_
     # Create bar plot for editing activity
     html_d[EDIT_SECTION] = dict()
     html_d[EDIT_SECTION][TITLE] = "Editing Activity"
-    plot_editing_activity(result_df, confidence_interval, editing_threshold, html_d, output)
+
+    if allele:
+        plot_editing_activity(result_df, confidence_interval, editing_threshold, html_d, "all", output)
+        plot_editing_activity(result_df, confidence_interval, editing_threshold, html_d, "no_allele", output)
+        plot_editing_activity(result_df, confidence_interval, editing_threshold, html_d, "allele_only", output)
+    else:
+        plot_editing_activity(result_df, confidence_interval, editing_threshold, html_d, "no_allele", output)
 
     # Dump reads statistics
     tx_input_n, tx_merged_n, tx_aligned_n = input_processing.read_numbers(ExpType.TX)
@@ -322,7 +330,7 @@ def plot_modification_tables(mod_table: ModificationTables, modifications: Modif
                     bbox_inches='tight', dpi=dpi)
         plt.subplots_adjust(left=0.14, bottom=0.25, right=None, top=0.9)
         fig.savefig(os.path.join(output, 'classifier_results_by_position_{}.svg'.format(name_suffix)),
-                    box_inches='tight')
+                    bbox_inches='tight')
 
         plt.close(fig)
 
@@ -359,8 +367,8 @@ def plot_distribution_of_all_modifications(tables: ModificationTables, cut_site:
     mock_dist_d = dict()
     amplicon_length = len(tables.amplicon)
     for indel_type in [IndelType.DEL, IndelType.SUB, IndelType.INS]:
-        tx_dist_d[indel_type] = np.zeros(amplicon_length + 1, dtype=np.int)
-        mock_dist_d[indel_type] = np.zeros(amplicon_length + 1, dtype=np.int)
+        tx_dist_d[indel_type] = np.zeros(amplicon_length + 1, dtype=np.int64)
+        mock_dist_d[indel_type] = np.zeros(amplicon_length + 1, dtype=np.int64)
 
     # Tx - Aggregate modifications
     for row_idx, row in tables.tx_dist.iterrows():
@@ -415,7 +423,7 @@ def plot_distribution_of_all_modifications(tables: ModificationTables, cut_site:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
         fig.savefig(os.path.join(output, 'distribution_of_all_modifications.png'), bbox_inches='tight', dpi=dpi)
-        fig.savefig(os.path.join(output, 'distribution_of_all_modifications.svg'), pad_inches = 1, box_inches='tight')
+        fig.savefig(os.path.join(output, 'distribution_of_all_modifications.svg'), pad_inches = 1, bbox_inches='tight')
         plt.close(fig)
 
     html_d[MOD_SECTION][MOD_DIST] = dict()
@@ -430,7 +438,7 @@ def plot_distribution_of_edit_events(tables: ModificationTables, cut_site: int, 
     dist_d = dict()
     amplicon_length = len(tables.amplicon)
     for indel_type in [IndelType.DEL, IndelType.SUB, IndelType.INS]:
-        dist_d[indel_type] = np.zeros(amplicon_length + 1, dtype=np.int)
+        dist_d[indel_type] = np.zeros(amplicon_length + 1, dtype=np.int64)
 
     # Aggregate modifications
     edit_mod = tables.tx_dist.loc[tables.tx_dist[IS_EDIT]]
@@ -467,7 +475,7 @@ def plot_distribution_of_edit_events(tables: ModificationTables, cut_site: int, 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
         fig.savefig(os.path.join(output, 'distribution_of_edit_events.png'), bbox_inches='tight', dpi=1200)
-        fig.savefig(os.path.join(output, 'distribution_of_edit_events.svg'), box_inches='tight')
+        fig.savefig(os.path.join(output, 'distribution_of_edit_events.svg'), bbox_inches='tight')
         plt.close(fig)
 
     html_d[MOD_SECTION][EDIT_DIST] = dict()
@@ -534,7 +542,7 @@ def plot_distribution_of_edit_event_sizes(tables: ModificationTables, output: Pa
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
         fig.savefig(os.path.join(output, 'distribution_of_edit_events_size.png'), bbox_inches='tight', dpi=dpi)
-        fig.savefig(os.path.join(output, 'distribution_of_edit_events_size.svg'), pad_inches = 1, box_inches='tight')
+        fig.savefig(os.path.join(output, 'distribution_of_edit_events_size.svg'), pad_inches = 1, bbox_inches='tight')
         plt.close(fig)
 
     html_d[MOD_SECTION][EDIT_SIZE_DIST] = dict()
@@ -740,7 +748,7 @@ def plot_site_editing_activity(algorithm: CoreAlgorithm, result_d: Dict, site_na
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
         fig.savefig(os.path.join(output, 'site_editing_activity.png'), bbox_inches='tight', dpi=dpi)
-        fig.savefig(os.path.join(output, 'site_editing_activity.svg'), box_inches='tight')
+        fig.savefig(os.path.join(output, 'site_editing_activity.svg'), bbox_inches='tight')
         plt.close(fig)
 
     edit_text = "<p style=\"text-align: center\"> Number of edited reads - {:,} (out of {:,} reads).<p>".format(result_d[TX_EDIT], result_d[TX_READ_NUM])
@@ -758,7 +766,9 @@ def plot_site_editing_activity(algorithm: CoreAlgorithm, result_d: Dict, site_na
 #####------Experiment------#####
 #####----------------------#####
 def plot_editing_activity(result_df: AlgResultDf, confidence_interval: float, editing_threshold: float, html_d: Dict,
-                          output: Path):
+                          allele_display_option: "", output: Path):
+
+    logger = LoggerWrapper.get_logger()
 
     # Set font
     mpl.rcParams.update(mpl.rcParamsDefault)
@@ -768,26 +778,150 @@ def plot_editing_activity(result_df: AlgResultDf, confidence_interval: float, ed
     mpl.rcParams['axes.labelsize'] = 11
     mpl.rcParams['axes.titlesize'] = 11
     mpl.rcParams['legend.fontsize'] = 11
-    editing_bar_text_size = 8
+    editing_bar_text_size = 6
     dpi = 300
     title = ""
 
     # Filter all low editing activity sites
     edit_df = result_df.dropna()
-    edit_df = edit_df.loc[edit_df[CI_HIGH] >= editing_threshold]
+    axline_list = []
 
     # Sort experiments
-    edit_df = edit_df.sort_values(by=EDIT_PERCENT, ascending=False)
+    if allele_display_option == "all":
+
+        allele_df = edit_df[edit_df[SITE_NAME].str.contains('\[')]
+        allele_df.insert(len(allele_df.columns), 'PIVOT', list(allele_df[SITE_NAME].map(lambda x: x.split('_[')[0])))
+        allele_df.insert(len(allele_df.columns), 'AXLINE', [False] * len(allele_df[SITE_NAME]))
+        columns = allele_df.columns
+        allele_list = pd.unique(allele_df['PIVOT'])
+
+        non_allele_df = edit_df[~edit_df[SITE_NAME].str.contains('\[')]
+        non_allele_df.insert(len(non_allele_df.columns), 'PIVOT', non_allele_df[SITE_NAME])
+        non_allele_df = non_allele_df.sort_values(by=EDIT_PERCENT, ascending=False).reset_index(drop=True)
+        non_allele_df['AXLINE'] = [False] * len(non_allele_df[SITE_NAME])
+
+        row_list_to_concat = []
+        for idx, row in non_allele_df.iterrows():
+            if row[SITE_NAME] not in allele_list.tolist():
+                # implement filtering if condition here
+                if row[CI_HIGH] >= editing_threshold:
+                    non_allele_df.at[idx, 'AXLINE'] = True
+                    row_list_to_concat.append(non_allele_df.loc[[idx], columns])
+
+                else:
+                    pass
+            else:
+                non_allele_df.at[idx, 'AXLINE'] = True
+                row_list_to_concat.append(non_allele_df.loc[[idx], columns])
+                allele_df_temp = allele_df[allele_df['PIVOT'] == row['PIVOT']]
+                row_list_to_concat.append(allele_df_temp)
+
+        edit_df = pd.concat(row_list_to_concat, axis=0, ignore_index=True).reset_index(drop=True)
+        edit_df = edit_df[columns]
+        edit_df['AXLINE'] = edit_df['AXLINE'].fillna(False)
+        axline_list = edit_df.index[edit_df['AXLINE']].tolist()
+        edit_df['PLOTNUMBER'] = [0] * len(edit_df[SITE_NAME])
+        plot_number = 0
+        for i in range(len(edit_df[SITE_NAME])):
+            if i == 0:
+                continue
+
+            elif i % 9 == 0 and edit_df.at[i, 'AXLINE'] == True:
+                edit_df.at[i, 'PLOTNUMBER'] = plot_number + 1
+                plot_number += 1
+
+            elif i % 9 == 0 and edit_df.at[i, 'AXLINE'] == False:
+                j = i
+                plot_number += 1
+                while edit_df.at[j, 'AXLINE'] == False:
+                    edit_df.at[j, 'PLOTNUMBER'] = plot_number
+                    j -= 1
+                edit_df.at[j, 'PLOTNUMBER'] = plot_number
+
+            else:
+                edit_df.at[i, 'PLOTNUMBER'] = plot_number
+
+    elif allele_display_option == "no_allele":
+
+        edit_df = edit_df.loc[edit_df[CI_HIGH] >= editing_threshold]
+        edit_df = edit_df[~edit_df[SITE_NAME].str.contains('\[')]
+        edit_df = edit_df.sort_values(by=EDIT_PERCENT, ascending=False)
+        edit_df = edit_df.reset_index(drop=True)
+        edit_df['PLOTNUMBER'] = [0] * len(edit_df[SITE_NAME])
+        plot_number = 0
+
+        for i in range(len(edit_df[SITE_NAME])):
+            if i == 0:
+                continue
+
+            if i % 9 == 0:
+                edit_df.at[i, 'PLOTNUMBER'] = plot_number + 1
+                plot_number += 1
+
+    else:
+        allele_df = edit_df[edit_df[SITE_NAME].str.contains('\[')].copy()
+        allele_df['PIVOT'] = allele_df[SITE_NAME].map(lambda x: x.split('_[')[0])
+        allele_list = pd.unique(allele_df['PIVOT'])
+
+        temp_df = edit_df.copy()
+        temp_df = temp_df.sort_values(by=[SITE_NAME, EDIT_PERCENT], ascending=[True, False]).reset_index(drop=True)
+        temp_df['PIVOT'] = ""
+        temp_df['AXLINE'] = [False] * len(temp_df[SITE_NAME])
+        for idx, row in temp_df.iterrows():
+            if '_[' in row[SITE_NAME]:
+                row['PIVOT'] = row[SITE_NAME].split('_[')[0]
+            else:
+                row['PIVOT'] = row[SITE_NAME]
+                temp_df.at[idx, 'AXLINE'] = True
+
+            if row['PIVOT'] not in allele_list:
+                temp_df = temp_df.drop([idx])
+
+        temp_df = temp_df.reset_index(drop=True)
+        edit_df = temp_df
+        edit_df['PLOTNUMBER'] = [0] * len(edit_df[SITE_NAME])
+        axline_list = edit_df.index[edit_df['AXLINE']].tolist()
+        plot_number = 0
+
+        for i in range(len(edit_df[SITE_NAME])):
+            if i == 0:
+                continue
+
+            elif i % 9 == 0 and edit_df.at[i, 'AXLINE'] == True:
+                edit_df.at[i, 'PLOTNUMBER'] = plot_number + 1
+                plot_number += 1
+
+            elif i % 9 == 0 and edit_df.at[i, 'AXLINE'] == False:
+                j = i
+                plot_number += 1
+                while edit_df.at[j, 'AXLINE'] == False:
+                    edit_df.at[j, 'PLOTNUMBER'] = plot_number
+                    j -= 1
+                edit_df.at[j, 'PLOTNUMBER'] = plot_number
+
+            else:
+                edit_df.at[i, 'PLOTNUMBER'] = plot_number
+
+    if edit_df.empty and allele_display_option == "allele_only":
+        return
+
+    if edit_df.empty:
+        logger.warning("Experiment has no sites with editing activity. If it is unexpected results, please check"
+                       " your files.")
+        return None
 
     # Create axes
-    max_bars = 20
+    pd.set_option('display.max_columns', None)
     bar_num = edit_df.shape[0]
-    plot_num = math.ceil(bar_num / max_bars)
+    max_bars = 10
+    plot_num = edit_df['PLOTNUMBER'].max() + 1
+
     # set dynamic bar_width - according to the number of bars
-    fig_w = 4 + 4 * (min(bar_num, max_bars) / 20)
-    fig_h = plot_num * 3
-    bar_width = 0.9
+    fig_w = 5 + 4 * (min(bar_num, max_bars) / 20)
+    fig_h = plot_num * 6
+    bar_width = 0.95
     fig, axes = plt.subplots(nrows=plot_num, ncols=1, figsize=(fig_w, fig_h), tight_layout=True)
+    plt.tight_layout(pad=15.0)
 
     # Create bars and bar names
     editing = edit_df[EDIT_PERCENT].values
@@ -795,18 +929,18 @@ def plot_editing_activity(result_df: AlgResultDf, confidence_interval: float, ed
     CI_high = edit_df[CI_HIGH].values - editing
     CI_low = editing - edit_df[CI_LOW].values
     on_target = edit_df[ON_TARGET].values
+    accum_bars = 0
 
     # Create bar plot
     for idx in range(plot_num):
         if plot_num == 1:
             axes = [axes]
-
-        plt_editing = editing[max_bars * idx:min(max_bars * (idx + 1), len(editing))]
-        plt_site_names = site_names[max_bars * idx:min(max_bars * (idx + 1), len(site_names))]
-        plt_CI_high = CI_high[max_bars * idx:min(max_bars * (idx + 1), len(CI_high))]
-        plt_CI_low = CI_low[max_bars * idx:min(max_bars * (idx + 1), len(CI_low))]
-        plt_on_target = on_target[max_bars * idx:min(max_bars * (idx + 1), len(on_target))]
-
+        max_bars = edit_df['PLOTNUMBER'].value_counts()[idx]
+        plt_editing = editing[accum_bars:(accum_bars + max_bars)]
+        plt_site_names = site_names[accum_bars:(accum_bars + max_bars)]
+        plt_CI_high = CI_high[accum_bars:(accum_bars + max_bars)]
+        plt_CI_low = CI_low[accum_bars:(accum_bars + max_bars)]
+        plt_on_target = on_target[accum_bars:(accum_bars + max_bars)]
         # The X position of bars
         number_of_bars = len(plt_editing)
         bar_pos = list(range(1, number_of_bars + 1))
@@ -835,6 +969,17 @@ def plot_editing_activity(result_df: AlgResultDf, confidence_interval: float, ed
             axes[idx].set_xlim(0, max_bars + 1)
         else:
             axes[idx].set_xlim(0, min(number_of_bars + 3, max_bars + 1))
+
+        # Add vertical line
+        if allele_display_option == "all" or allele_display_option == "allele_only":
+            vline_pos = []
+            for i, pos in enumerate(bar_pos):
+                df_idx = accum_bars + i
+
+                if df_idx in axline_list:
+                    vline_pos.append(bar_pos[i] - 0.5)
+
+            axes[idx].vlines(x=vline_pos, ymin=0, ymax=100, colors='black')
 
         # Text below each bar plot + y ticks
         axes[idx].set_xticks([r + 1 for r in range(number_of_bars)])
@@ -868,24 +1013,56 @@ def plot_editing_activity(result_df: AlgResultDf, confidence_interval: float, ed
                            size=editing_bar_text_size)
 
         if idx == 0:
-            title = "Editing Activity with {} % CI above {}%".format(100 * confidence_interval, editing_threshold)
+            if allele_display_option == "all":
+                title = "Editing Activity with {} % CI".format(100 * confidence_interval)
+            elif allele_display_option == "no_allele":
+                title = "Editing Activity (Non-Allele Sites) above {}%".format(editing_threshold)
+            else:
+                title = "Allele Sites Only"
             # axes[idx].set_title(title, weight='bold', family='serif')
 
             # Add legend
             axes[idx].bar([0], [y_lim], color=ON_TARGET_COLOR, label="On-Target")
             axes[idx].bar([0], [y_lim], color=OFF_TARGET_COLOR, label="Off-Target")
-            axes[idx].legend(loc='upper right')
+            axes[idx].legend(loc='upper center', bbox_to_anchor=(0.5, 1.3))
 
-    if edit_df.shape[0] > 0:
-        fig.savefig(os.path.join(output, 'editing_activity.png'), box_inches='tight', dpi=dpi)
-        fig.savefig(os.path.join(output, 'editing_activity.svg'), pad_inches = 1, box_inches='tight')
+        accum_bars += max_bars
 
-    html_d[EDIT_SECTION][EDITING_ACTIVITY] = dict()
-    html_d[EDIT_SECTION][EDITING_ACTIVITY][PLOT_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity.png')
-    html_d[EDIT_SECTION][EDITING_ACTIVITY][PDF_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity.svg')
-    html_d[EDIT_SECTION][EDITING_ACTIVITY][TITLE] = title
-    html_d[EDIT_SECTION][EDITING_ACTIVITY][W] = "{}%".format(min(95, int(50 + 45 * (bar_num / 20))))
-    html_d[EDIT_SECTION][EDITING_ACTIVITY][H] = dpi*fig_h
+    if allele_display_option == "all":
+        if edit_df.shape[0] > 0:
+            fig.savefig(os.path.join(output, 'editing_activity_all.png'), dpi=dpi, bbox_inches='tight')
+            fig.savefig(os.path.join(output, 'editing_activity_all.svg'), pad_inches=1, bbox_inches='tight')
+
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALL] = dict()
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALL][PLOT_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity_all.png')
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALL][PDF_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity_all.svg')
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALL][TITLE] = title
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALL][W] = "{}%".format(min(95, int(50 + 45 * (bar_num / 20))))
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALL][H] = dpi*fig_h
+
+    elif allele_display_option == "no_allele":
+        if edit_df.shape[0] > 0:
+            fig.savefig(os.path.join(output, 'editing_activity.png'),dpi=dpi, bbox_inches='tight')
+            fig.savefig(os.path.join(output, 'editing_activity.svg'), pad_inches=1, bbox_inches='tight')
+
+        html_d[EDIT_SECTION][EDITING_ACTIVITY] = dict()
+        html_d[EDIT_SECTION][EDITING_ACTIVITY][PLOT_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity.png')
+        html_d[EDIT_SECTION][EDITING_ACTIVITY][PDF_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity.svg')
+        html_d[EDIT_SECTION][EDITING_ACTIVITY][TITLE] = title
+        html_d[EDIT_SECTION][EDITING_ACTIVITY][W] = "{}%".format(min(95, int(50 + 45 * (bar_num / 20))))
+        html_d[EDIT_SECTION][EDITING_ACTIVITY][H] = dpi*fig_h
+
+    else:
+        if edit_df.shape[0] > 0:
+            fig.savefig(os.path.join(output, 'editing_activity_allele_only.png'), dpi=dpi, bbox_inches='tight')
+            fig.savefig(os.path.join(output, 'editing_activity_allele_only.svg'), pad_inches=1, bbox_inches='tight')
+
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALLELE_ONLY] = dict()
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALLELE_ONLY][PLOT_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity_allele_only.png')
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALLELE_ONLY][PDF_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity_allele_only.svg')
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALLELE_ONLY][TITLE] = title
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALLELE_ONLY][W] = "{}%".format(min(95, int(50 + 45 * (bar_num / 20))))
+        html_d[EDIT_SECTION][EDITING_ACTIVITY_ALLELE_ONLY][H] = dpi*fig_h
 
     plt.close(fig)
 
@@ -1037,14 +1214,16 @@ def plot_translocations_heatmap(result_df: pd.DataFrame, trans_result_df: TransR
     trans_copy_df[SITE_A] = trans_df[SITE_B]
     trans_copy_df[SITE_B] = trans_df[SITE_A]
     trans_df = pd.concat([trans_df, trans_copy_df])
-    heat_df = trans_df.pivot(SITE_A, SITE_B, TX_TRANS_READ)
+    # heat_df = trans_df.pivot(SITE_A, SITE_B, TX_TRANS_READ) #NK changed for python>3.10 compatibility
+    heat_df = trans_df.pivot(columns=SITE_A, index=SITE_B, values=TX_TRANS_READ)
     heat_df[heat_df.isna()] = 0
     heat_df = heat_df.astype(int)
     max_trans_n = heat_df.max().max()
     active_site_n = heat_df.shape[0]
-    heat_df['Total'] = np.zeros(active_site_n, dtype=np.int)
+    # heat_df['Total'] = np.zeros(active_site_n, dtype=np.int)
+    heat_df['Total'] = np.zeros(active_site_n, dtype=np.int64)  # NECHAMA TBD
     # heat_df['NHEJ Activity (%)'] = np.zeros(active_site_n, dtype=np.int)
-    heat_df['NHEJ Activity (%)'] = np.zeros(active_site_n, dtype=np.float)  # NK 251223 changed int to float to prevent error
+    heat_df['NHEJ Activity (%)'] = np.zeros(active_site_n, dtype=np.float64)  # NK 251223 changed int to float to prevent error #NK 310124 chenged to np.float64 for compatibility with newer python versions
 
     # total_trans = heat_df.sum()
     total_trans = heat_df.sum().astype(int)  # NK 251223 change trans sum to integer
@@ -1114,7 +1293,7 @@ def plot_translocations_heatmap(result_df: pd.DataFrame, trans_result_df: TransR
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
         fig.savefig(os.path.join(output, "translocations_heatmap.png"), bbox_inches='tight', dpi=dpi)
-        fig.savefig(os.path.join(output, "translocations_heatmap.svg"), pad_inches=1, box_inches='tight')
+        fig.savefig(os.path.join(output, "translocations_heatmap.svg"), pad_inches=1, bbox_inches='tight')
         plt.close(fig)
 
 

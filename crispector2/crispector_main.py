@@ -58,9 +58,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
             LoggerWrapper.set_logger_level(logging.INFO)
         logger = LoggerWrapper.get_logger()
 
-        # running CRISPECTOR2.0
-        logger.info("Running CRISPECTOR2.0... new version")
-
         # Display welcome msg
         click.echo(welcome_msg)
         logger.debug("Command used:\n {}".format(command_used))
@@ -481,7 +478,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         logger.info("Start creating experiment plots and tables")
         html_param_d = create_experiment_output(summary_df, tx_trans_df, mock_trans_df, trans_result_df,
                                                 input_processing, min_num_of_reads, confidence_interval,
-                                                min_editing_activity, translocation_p_value, output, donor)
+                                                min_editing_activity, translocation_p_value, output, donor, allele)
 
         if not suppress_site_output:
             for site, algorithm in algorithm_d.items():
@@ -507,8 +504,14 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
             with open(os.path.join(output, "html_param_d.pkl"), "wb") as file:
                 pickle.dump(html_param_d, file)
 
+        if allele and not Alleles.new_alleles:
+            logger.info("NOTE: You've asked to analyze alleles, however we did not find any.")
+
         # Create final HTML report
-        create_final_html_report(html_param_d, report_output)
+        if 'editing_activity' in html_param_d['edit_section'].keys():  # check if there are sites to be shown
+            create_final_html_report(html_param_d, report_output)
+        else:
+            logger.info("This experiment has no detected editing activity, thus there will be no html output.")
 
     # Catch exceptions
     except BadInputError as e:

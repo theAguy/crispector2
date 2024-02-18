@@ -5,8 +5,9 @@ import math
 import random
 from crispector2.utils.configurator import Configurator
 from crispector2.input_processing.alignment import LocalLooseAlignment
+from crispector2.utils.logger import LoggerWrapper
 
-np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
+# np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 
 
 def _is_long_del(matches, pos, snp_locus):
@@ -36,6 +37,10 @@ class AlleleForTx:
         self._sites_score = pd.DataFrame(columns=[SITE_NAME, AVG_SCORE])
         self.alleles_ref_reads = alleles_ref_reads
         self.random_reads = dict()
+
+        # Set logger
+        logger = LoggerWrapper.get_logger()
+        self._logger = logger
 
         self._cfg = Configurator.get_cfg()
         # create alignment instances

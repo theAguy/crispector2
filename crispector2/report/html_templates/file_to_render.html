@@ -10,26 +10,66 @@
 
 {% block edit_section_title %}
 		{{exp_param_d.edit_section.title}}
-{% endblock %}	
+{% endblock %}
 
 {% block edit_section_editing_activity_title %}
-		{{exp_param_d.edit_section.editing_activity.title}}
+	<ul class="nav nav-tabs flex-wrap:nowrap" id="myTab" role="tablist">
+	    {% if exp_param_d.edit_section.editing_activity_all and exp_param_d.edit_section.editing_activity_allele_only %}
+			<li class="nav-item">
+				<a class="nav-link active" id="edit_section_editing_activity_all_tab" data-toggle="tab" href="#edit_section_editing_activity_all" role="tab" aria-controls="" aria-selected="true">{{exp_param_d.edit_section.editing_activity_all.title}}</a>
+			</li>
+		    <li class="nav-item">
+				<a class="nav-link" id="edit_section_editing_activity_tab" data-toggle="tab" href="#edit_section_editing_activity" role="tab" aria-controls="" aria-selected="false">{{exp_param_d.edit_section.editing_activity.title}}</a>
+	  		</li>
+		    <li class="nav-item">
+			    <a class="nav-link" id="edit_section_editing_allele_only_activity_tab" data-toggle="tab" href="#edit_section_editing_activity_allele_only" role="tab" aria-controls="" aria-selected="false">{{exp_param_d.edit_section.editing_activity_allele_only.title}}</a>
+		    </li>
+		    <li class="nav-item">
+		        <a class="nav-link" id="edit_section_result_table_tab" data-toggle="tab" href="#edit_section_result_table" role="tab" aria-controls="mapping_per_site" aria-selected="false">{{exp_param_d.edit_section.result_table.title}}</a>
+	        </li>
+		{% else %}
+		    <li class="nav-item">
+				<a class="nav-link active" id="edit_section_editing_activity_tab" data-toggle="tab" href="#edit_section_editing_activity" role="tab" aria-controls="" aria-selected="false">{{exp_param_d.edit_section.editing_activity.title}}</a>
+	  		</li>
+		    <li class="nav-item">
+		        <a class="nav-link" id="edit_section_result_table_tab" data-toggle="tab" href="#edit_section_result_table" role="tab" aria-controls="mapping_per_site" aria-selected="false">{{exp_param_d.edit_section.result_table.title}}</a>
+	        </li>
+		{% endif %}
+    </ul>
 {% endblock %}
 
 {% block edit_section_editing_activity_plot_path %}
-		{{exp_param_d.edit_section.editing_activity.plot_path}}
-{% endblock %}
-
-{% block edit_section_editing_activity_pdf_path %}
-		{{exp_param_d.edit_section.editing_activity.pdf_path}}
-{% endblock %}
-
-{% block edit_section_result_table_title %}
-		{{exp_param_d.edit_section.result_table.title}}
-{% endblock %}
-
-{% block edit_section_result_table %}
-		{{edit_section_result_table_html}}
+    {% if exp_param_d.edit_section.editing_activity_all and exp_param_d.edit_section.editing_activity_allele_only %}
+        <div class="tab-pane active" id="edit_section_editing_activity_all" role="tabpanel" aria-labelledby="edit_section_editing_activity_all">
+			<a href="{{exp_param_d.edit_section.editing_activity_all.pdf_path}}"><img src="{{exp_param_d.edit_section.editing_activity_all.plot_path}}" width={{exp_param_d.edit_section.editing_activity_all.width}}></a>
+		</div>
+		<div class="tab-pane" id="edit_section_editing_activity" role="tabpanel" aria-labelledby="edit_section_editing_activity">
+			<a href="{{exp_param_d.edit_section.editing_activity.pdf_path}}"><img src="{{exp_param_d.edit_section.editing_activity.plot_path}}" width={{exp_param_d.edit_section.editing_activity.width}}></a>
+		</div>
+        <div class="tab-pane" id="edit_section_editing_activity_allele_only" role="tabpanel" aria-labelledby="edit_section_editing_activity_all">
+			<a href="{{exp_param_d.edit_section.editing_activity_allele_only.pdf_path}}"><img src="{{exp_param_d.edit_section.editing_activity_allele_only.plot_path}}" width={{exp_param_d.edit_section.editing_activity_allele_only.width}}></a>
+		</div>
+        <div class="tab-pane" id="edit_section_result_table" role="tabpanel" aria-labelledby="edit_section_result_table">
+			<div class="table-responsive">
+			  <table class="table table-hover table-sm">
+				{{edit_section_result_table_html}}
+			  </table>
+			</div>
+			<br></br>
+		</div>
+    {% else %}
+        <div class="tab-pane active" id="edit_section_editing_activity" role="tabpanel" aria-labelledby="edit_section_editing_activity">
+			<a href="{{exp_param_d.edit_section.editing_activity.pdf_path}}"><img src="{{exp_param_d.edit_section.editing_activity.plot_path}}" width={{exp_param_d.edit_section.editing_activity.width}}></a>
+		</div>
+        <div class="tab-pane" id="edit_section_result_table" role="tabpanel" aria-labelledby="edit_section_result_table">
+			<div class="table-responsive">
+			  <table class="table table-hover table-sm">
+				{{edit_section_result_table_html}}
+			  </table>
+			</div>
+			<br></br>
+		</div>
+    {% endif %}
 {% endblock %}
 
 {% block translocations_menu %}

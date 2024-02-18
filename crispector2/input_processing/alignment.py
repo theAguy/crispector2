@@ -13,6 +13,7 @@ from typing import List, Tuple, Dict
 import pandas as pd
 from Bio import Align
 from Bio.SubsMat import MatrixInfo
+from Bio.Align import substitution_matrices
 from collections import defaultdict
 
 
@@ -40,8 +41,10 @@ class Alignment:
         self._aligner.open_gap_score = align_cfg["open_gap_score"]
         self._aligner.extend_gap_score = align_cfg["extend_gap_score"]
         if align_cfg["substitution_matrix"] != "":
-            if align_cfg["substitution_matrix"] in MatrixInfo.__dict__:
-                self._aligner.substitution_matrix = MatrixInfo.__dict__[align_cfg["substitution_matrix"]]
+            # if align_cfg["substitution_matrix"] in MatrixInfo.__dict__:
+            #     self._aligner.substitution_matrix = MatrixInfo.__dict__[align_cfg["substitution_matrix"]]
+            if align_cfg["substitution_matrix"] in substitution_matrices.load():
+                self._aligner.substitution_matrix = substitution_matrices.load(align_cfg["substitution_matrix"])
                 self._logger.warning("Shifting indels to cut-site isn't available for alignment with difference score"
                                      "substitution matrix. Contact package owner if this feature is required")
             else:
