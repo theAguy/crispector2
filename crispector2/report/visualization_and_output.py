@@ -1030,8 +1030,8 @@ def plot_editing_activity(result_df: AlgResultDf, confidence_interval: float, ed
 
     if allele_display_option == "all":
         if edit_df.shape[0] > 0:
-            fig.savefig(os.path.join(output, 'editing_activity_all.png'), dpi=dpi, bbox_inches='tight')
-            fig.savefig(os.path.join(output, 'editing_activity_all.svg'), pad_inches=1, bbox_inches='tight')
+            fig.savefig(os.path.join(output, 'editing_activity_all.png'), dpi=dpi)  # , bbox_inches='tight'
+            fig.savefig(os.path.join(output, 'editing_activity_all.svg'), pad_inches=1)  # , bbox_inches='tight'
 
         html_d[EDIT_SECTION][EDITING_ACTIVITY_ALL] = dict()
         html_d[EDIT_SECTION][EDITING_ACTIVITY_ALL][PLOT_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity_all.png')
@@ -1042,8 +1042,8 @@ def plot_editing_activity(result_df: AlgResultDf, confidence_interval: float, ed
 
     elif allele_display_option == "no_allele":
         if edit_df.shape[0] > 0:
-            fig.savefig(os.path.join(output, 'editing_activity.png'),dpi=dpi, bbox_inches='tight')
-            fig.savefig(os.path.join(output, 'editing_activity.svg'), pad_inches=1, bbox_inches='tight')
+            fig.savefig(os.path.join(output, 'editing_activity.png'), dpi=dpi)  # , bbox_inches='tight'
+            fig.savefig(os.path.join(output, 'editing_activity.svg'), pad_inches=1)  # , bbox_inches='tight'
 
         html_d[EDIT_SECTION][EDITING_ACTIVITY] = dict()
         html_d[EDIT_SECTION][EDITING_ACTIVITY][PLOT_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity.png')
@@ -1054,8 +1054,8 @@ def plot_editing_activity(result_df: AlgResultDf, confidence_interval: float, ed
 
     else:
         if edit_df.shape[0] > 0:
-            fig.savefig(os.path.join(output, 'editing_activity_allele_only.png'), dpi=dpi, bbox_inches='tight')
-            fig.savefig(os.path.join(output, 'editing_activity_allele_only.svg'), pad_inches=1, bbox_inches='tight')
+            fig.savefig(os.path.join(output, 'editing_activity_allele_only.png'), dpi=dpi)  # , bbox_inches='tight'
+            fig.savefig(os.path.join(output, 'editing_activity_allele_only.svg'), pad_inches=1)  # , bbox_inches='tight'
 
         html_d[EDIT_SECTION][EDITING_ACTIVITY_ALLELE_ONLY] = dict()
         html_d[EDIT_SECTION][EDITING_ACTIVITY_ALLELE_ONLY][PLOT_PATH] = os.path.join(OUTPUT_DIR, 'editing_activity_allele_only.png')

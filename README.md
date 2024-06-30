@@ -27,7 +27,7 @@ Briefly, CRISPECTOR2.0 assigns each read in the treatment and mock FASTQ files t
 CRISPECTOR2.0 can be installed using the [conda](http://conda.pydata.org/docs/intro.html) package manager [Bioconda](https://bioconda.github.io/) (for Linux & macOS), or as a PIP package (for Linux & macOS).
 
 ### Bioconda
-To install CRISPECTOR2.0 using Bioconda, download and install Anaconda Python 3.7, following the instructions at: https://www.anaconda.com/distribution/.
+To install CRISPECTOR2.0 using Bioconda, download and install Anaconda Python 3.8, following the instructions at: https://www.anaconda.com/distribution/.
 
 Open a terminal and type:
 
@@ -43,10 +43,10 @@ To install CRISPECTOR2.0 into the current conda environment, type:
 conda install crispector2
 ```
 
-If you don't already have an existing environment with Python 3.7, you can create one first (e.g. named `crispector_env`) with:
+If you don't already have an existing environment with Python 3.8, you can create one first (e.g. named `crispector_env`) with:
 
 ```
-conda create -n crispector_env python=3.7
+conda create -n crispector_env python=3.8
 conda activate crispector_env
 conda install crispector2
 ```
@@ -268,7 +268,7 @@ Parameters for Needleman-Wunch algorithm:
 - mismatch_score [int]: Mismatch option for Needleman-Wunsch alignment (default: -4) 
 - open_gap_score [int]: Gap open option for Needleman-Wunsch alignment (default: -25) 
 - extend_gap_score [int]: Gap extend option for Needleman-Wunsch alignment (default: 0)   
-- substitution_matrix [string]: Replace mismatch_score option with a matrix score. Any substitution matrix name from [BioPython](http://biopython.org/DIST/docs/tutorial/Tutorial.html)  (Bio.SubsMat.MatrixInfo) can be used. E.g.  "blosum62".  (default: "", meaning no substitution matrix)
+- substitution_matrix [string]: Replace mismatch_score option with a matrix score. Any substitution matrix name from [BioPython](http://biopython.org/DIST/docs/tutorial/Tutorial.html)  (substitution_matrices from Bio.Align) can be used. E.g.  "blosum62".  (default: "", meaning no substitution matrix)
 ### NHEJ inference
 Parameters for NHEJ inference. This option is advisable only for users that read CRISPECTOR paper (see [Citation](#Citation)):
 - default_q  [int] - The probability of an indel to occur through an edit event. Used when `--override_noise_estimation` is set. (default: -3).
