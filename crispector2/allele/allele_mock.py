@@ -6,9 +6,10 @@ from scipy.stats import entropy
 import scipy.stats
 import math
 import random
-from crispector2.input_processing.alignment import LocalStrictAlignment, LocalLooseAlignment, GlobalStrictAlignment
+from crispector2.input_processing.alignment import LocalStrictAlignment, LocalLooseAlignment, GlobalStrictAlignment, MainAlignment
 from crispector2.utils.configurator import Configurator
 from crispector2.utils.logger import LoggerWrapper
+from collections import Counter
 
 
 class AlleleForMock:
@@ -28,6 +29,7 @@ class AlleleForMock:
         self._max_mm = max_allele_mismatches
         self._max_len_snv_ctc = max_len_snv_ctc
         self._random_reads_threshold_percentage = random_percentage
+        self.alleles_mock_tx_ratios = dict()
 
         # dict for random reads
         self.random_reads = dict()
@@ -51,6 +53,9 @@ class AlleleForMock:
         self._ll_aligner = LocalLooseAlignment(self._cfg["local_loose_alignment"])
         self._gs_aligner = GlobalStrictAlignment(self._cfg["global_strict_alignment"])
 
+        # create alignment instance as the main alignment
+        self._main_aligner = MainAlignment(self._cfg["alignment"], self._cfg["NHEJ_inference"]["window_size"])
+
     # -------------------------------#
     ######### Public methods #########
     # -------------------------------#
@@ -71,20 +76,25 @@ class AlleleForMock:
 
         # if the function finds SNPs
         if SNP:
+            self.alleles_mock_tx_ratios[self._site_name] = dict()
             # separate to random reads and not random
             self.random_reads[self._site_name] = df[df[IS_RANDOM] == True]
             df_no_random = df[df[IS_RANDOM] == False]
+            sum_no_rand_reads = sum(df_no_random[FREQ])
             # set threshold for percentage of random reads out of all reads. If more than that - do not report alleles
             if sum(df[df[IS_RANDOM] == True][FREQ]) / sum(df[FREQ]) > self._random_reads_threshold_percentage:
                 self._logger.info("Site {} has to many random reads".format(self._site_name))
             else:
+                self.alleles_mock_tx_ratios[self._site_name]['mock'] = dict()
                 # iterate over all possible alleles
                 for allele in list(self._windows.keys()):
                     # filter df for reads with the current snp and clean columns
                     df_for_curr_allele = df_no_random.loc[df_no_random[SNP_PHASE] == allele]
+                    # get the ratio of this allele, without the random reads
+                    self.alleles_mock_tx_ratios[self._site_name]['mock'][allele] = sum(
+                        df_for_curr_allele[FREQ]) / sum_no_rand_reads
                     # get the most relevant amplicon for reference from df
                     amplicon = self.alleles_ref_reads[site_name][allele]
-                    # amplicon2 = self._get_ref_amplicon(df_for_curr_allele, site_name)
                     df_for_curr_allele = df_for_curr_allele.drop(labels=[SNP_PHASE, LEN, SNP_NUC_TYPE], axis=1)
                     allele_window_list = self._windows[allele]
                     # TBD: change the name to more relevant one
@@ -114,48 +124,20 @@ class AlleleForMock:
     ######### Private methods #######
     # -------------------------------#
 
-    # def _get_ref_amplicon(self, df_for_curr_allele, site_name):
-    #     """
-    #      Find for each allele site a reference amplicon  that is most similar to original amplicon
-    #      :param: df_for_curr_allele: The df of the current allele
-    #      :param: site_name: The original site name
-    #      :return: amplicon: Return an amplicon for the allele site
-    #      """
-    #     i = 0
-    #     indx = df_for_curr_allele.index[i]
-    #     # while the read is not in the same length as original amplicon - continue
-    #     while len(df_for_curr_allele.at[indx, ALIGNMENT_W_DEL]) != len(
-    #             self._ref_df.at[site_name, REFERENCE]):
-    #         i += 1
-    #         try:
-    #             indx = df_for_curr_allele.index[i]
-    #         # enter here if ran over all reads and no one is the same length
-    #         except:
-    #             break
-    #
-    #     # if it ran over all columns with no success, return the first row (the highest frequency)
-    #     if indx == list(df_for_curr_allele.index)[-1]:
-    #         indx = df_for_curr_allele.index[0]
-    #         amplicon = df_for_curr_allele.at[indx, ALIGNMENT_W_DEL]
-    #     # else, return the amplicon that was found
-    #     else:
-    #         amplicon = df_for_curr_allele.at[indx, ALIGNMENT_W_DEL]
-    #
-    #     return amplicon
-
-    def _alignment_to_return_reads(self, relevant_read, window, CTC):
+    def _alignment_to_return_reads(self, relevant_read, window, CTC, start_from):
         """
          Return the start and end coordinates of the alignment`
          :param: relevant_read: The relevant read to align to
          :param: window: The window around the snp
          :param: CTC: Does the snp close to cut-site?
+         :param: start_from: start align from this point
          :return: start: Start coordinate of the alignment;
                   end: End coordinate of the alignment
          """
         if not CTC:
-            alignment = self._ls_aligner._align_seq_to_read(relevant_read, window)
+            alignment = self._ls_aligner._align_seq_to_read(relevant_read[start_from:], window)
         else:  # TBD: I think that it does not matter for this part if it is CTC or not!
-            alignment = self._ll_aligner._align_seq_to_read(relevant_read, window)
+            alignment = self._ll_aligner._align_seq_to_read(relevant_read[start_from:], window)
 
         [read_aligned, matches, window_aligned, _] = format(alignment[0]).split("\n")
         # finding positions of start and end in the original read
@@ -163,12 +145,12 @@ class AlleleForMock:
         start2 = matches.find('.')
         end1 = matches.rfind('|')
         end2 = matches.rfind('.')
-        start = min(start1, start2)
-        end = max(end1, end2) + 1
+        start = min(start1, start2) + start_from
+        end = max(end1, end2) + start_from + 1
 
         return start, end
 
-    def _get_specific_windows(self, reference_read):
+    def _get_specific_windows(self, df):  # reference_read
         """
          Create list of windows to be aligned to reads with different length then consensus, and create self._window
          :param: reference_read: The reference read to extract window from
@@ -179,19 +161,33 @@ class AlleleForMock:
         windows_dict = dict()
         reads_per_allele = dict()
         allele_phases = list(self._nuc_distribution_before.keys())[:self._number_of_alleles]
-
         # the specific case - make a window with correct snp for each allele for each snp position
         for allele in allele_phases:
-            # new_reference_read = reference_read
-            # snp_list = [*allele]
-            # for j, snp in enumerate(snp_list):
-            #     new_reference_read = new_reference_read[:self._snp_locus[j]] + snp + \
-            #                          new_reference_read[self._snp_locus[j] + 1:]
-            new_reference_read = self._get_ref_read(allele, reference_read)
+            df_for_curr_allele = df.loc[df[SNP_PHASE] == allele]
+            new_reference_read = df_for_curr_allele.iloc[0, 3]
             reads_per_allele[allele] = new_reference_read
 
+        # check that all nb are equal except the snps
+        for i in range(len(list(reads_per_allele.values())[0])):
+            if i not in self._snp_locus:
+                temp_nb_l = list()
+                for allele_ref in list(reads_per_allele.values()):
+                    temp_nb_l.append(allele_ref[i])
+                if len(set(temp_nb_l)) >= 2:
+                    most_freq_nb = Counter(temp_nb_l).most_common(1)
+                    if most_freq_nb[0][1] > 1:
+                        selected_nb = most_freq_nb[0][0]
+                    else:
+                        selected_nb = temp_nb_l[0]
+
+                    for allele in allele_phases:
+                        temp_allele_ref = reads_per_allele[allele]
+                        correct_allele_ref = temp_allele_ref[:i] + selected_nb + temp_allele_ref[i+1:]
+                        reads_per_allele[allele] = correct_allele_ref
+
+        consensus_read = list(reads_per_allele.values())[0]
         for allele, read in reads_per_allele.items():
-            window_list_per_allele = self._prepare_snp_windows(read)
+            window_list_per_allele = self._prepare_snp_windows(consensus_read, allele)
             windows_dict[allele] = window_list_per_allele
 
         return windows_dict, reads_per_allele
@@ -208,11 +204,11 @@ class AlleleForMock:
         # Assigning all SNPs to be N in the reference read
         for snp_locus in self._snp_locus:
             new_reference_read = new_reference_read[:snp_locus] + N + new_reference_read[snp_locus + 1:]
-        windows_lists = self._prepare_snp_windows(new_reference_read)
+        windows_lists = self._prepare_general_snp_windows(new_reference_read)
 
         return windows_lists
 
-    def _prepare_snp_windows(self, ref_read):
+    def _prepare_general_snp_windows(self, ref_read):
         """
          for each snp, create all possible windows size self._half_window_len for each type of snp
          :param: reference_read: the relevant site's amplicon
@@ -245,6 +241,48 @@ class AlleleForMock:
             else:
                 window_search = ref_read[snp_locus - self._half_window_len:snp_locus + 1 + self._half_window_len]
                 windows_list_for_snp.append((window_search, CTC, add_nb_before, add_nb_after))
+
+        return windows_list_for_snp
+
+    def _prepare_snp_windows(self, ref_read, allele):
+        """
+         for each snp, create all possible windows size self._half_window_len for each type of snp
+         :param: reference_read: the relevant site's amplicon
+         :return: windows_list: list of lists that each list contains the window around the snp,
+                                if it's CTC (close to cut), and two variables that help the length of the window to be
+                                equal, even if the snp is too close to beginning or end of the amplicon
+         """
+        windows_list_for_snp = list()
+        for i, snp_locus in enumerate(self._snp_locus):
+            add_nb_before = 0
+            add_nb_after = 0
+            if abs(self._cut_site - snp_locus) < self._half_window_len:
+                CTC = True
+            else:
+                CTC = False  # CTC = Close To Cut-site
+
+            # if the read is close to the end, add from the left part some more nb
+            if len(ref_read) - snp_locus < self._half_window_len + 1:
+                add_nb_before = self._half_window_len - (len(ref_read) - snp_locus) + 1
+                window_search = ref_read[snp_locus - self._half_window_len - add_nb_before:snp_locus] + \
+                                allele[i] + \
+                                ref_read[snp_locus+1:snp_locus + 1 + self._half_window_len]
+                windows_list_for_snp.append((window_search, CTC, add_nb_before, add_nb_after))
+
+            # if the read is close to the start, add from the right part some more nb
+            elif snp_locus - self._half_window_len < 0:
+                add_nb_after = self._half_window_len - snp_locus
+                window_search = ref_read[:snp_locus] + \
+                                allele[i] + \
+                                ref_read[snp_locus + 1:snp_locus + 1 + self._half_window_len + add_nb_after]
+                windows_list_for_snp.append((window_search, CTC, add_nb_before, add_nb_after))
+            # if "normal"
+            else:
+                window_search = ref_read[snp_locus - self._half_window_len:snp_locus] + \
+                                allele[i] + \
+                                ref_read[snp_locus+1:snp_locus + 1 + self._half_window_len]
+                windows_list_for_snp.append((window_search, CTC, add_nb_before, add_nb_after))
+
         return windows_list_for_snp
 
     def _return_reads_to_nuc_dist(self, df, filtered_df, windows_list):
@@ -259,10 +297,12 @@ class AlleleForMock:
         df_dropped_list = list()
 
         for i, row in filtered_df.iterrows():
+            position_passed = [0]
             read = row[ALIGNMENT_W_DEL]
             for idx, (window, CTC, additional_nb_before, additional_nb_after) in enumerate(windows_list):
                 # get the start and end coordinates according to the alignment
-                start, end = self._alignment_to_return_reads(read, window, CTC)
+                start, end = self._alignment_to_return_reads(read, window, CTC, position_passed[-1])
+                position_passed.append(max(0, end - len(window)))
                 # if succeed to align properly # TBD: Check the case of CTC==True
                 if end - start == len(window):
                     snp_nb = read[start:end][
@@ -359,34 +399,16 @@ class AlleleForMock:
 
         return coverage_list, entropy_scores, norm_scores_list, number_of_alleles
 
-    def _get_ref_read(self, allele, most_freq_read):
+    def _get_ref_read(self, most_freq_read):
         """
          Generates the new reference read for the allele
-         :param: allele: The allele phase
          :param: most_freq_read: The most frequent read in the allele's df
          :return: new_ref_read: The new reference read of the allele
          """
-        new_ref_read = ''
-
         alignment = self._ll_aligner._align_seq_to_read(self._ref_amplicon, most_freq_read)
         [ref_w_i, signs, read_w_d, _] = format(alignment[0]).split("\n")
-        # if the new read is longer - add N where it should be
-        for i, sign in enumerate(signs):
-            if sign == '|':
-                new_ref_read += ref_w_i[i]
-            elif sign == '.':
-                new_ref_read += ref_w_i[i]
-            elif sign == '-':
-                new_ref_read += 'N'
-        # change each position the SNP according to the allele
-        for i, locus in enumerate(self._snp_locus):
-            new_ref_read = new_ref_read[:locus] + allele[i] + new_ref_read[locus + 1:]
-        # if the N was not a SNP - remove it from the new reference
-        # for n in [indx for indx, char in enumerate(new_ref_read) if char == 'N']:
-        #     new_ref_read = new_ref_read[:n] + new_ref_read[n+1:]
-        new_ref_read = new_ref_read.replace("N", "")
 
-        return new_ref_read
+        return read_w_d
 
     def _mock_SNP_detection(self):
         """
@@ -431,12 +453,8 @@ class AlleleForMock:
 
                 # handle reads that are not at length of the self._consensus length:
                 # get the relevant reference read
-                #TBD: New change - CHECK! START
                 reference_read_w_al = same_len_df.loc[same_len_indexes[list(same_len_df[FREQ]).index(
                     max(same_len_df[FREQ]))], ALIGNMENT_W_DEL]
-                reference_read_wo_al = same_len_df.loc[same_len_indexes[list(same_len_df[FREQ]).index(
-                    max(same_len_df[FREQ]))], READ]
-                # TBD: New change END
                 # create all relevant "windows" around each potential SNP
                 windows_list_for_realignment = self._get_general_windows(reference_read_w_al)
                 # assign reads with different length back to the main df
@@ -450,7 +468,7 @@ class AlleleForMock:
                 self._nuc_distribution_before = self._norm_nuc_distribution(df_w_returned[[SNP_PHASE, FREQ]])
                 # get the number of alleles
                 _, _, _, self._number_of_alleles = self._get_num_alleles()
-                self._windows, reads_per_allele = self._get_specific_windows(reference_read_wo_al)
+                self._windows, reads_per_allele = self._get_specific_windows(df_w_returned)
                 self.alleles_ref_reads[self._site_name] = reads_per_allele
 
                 # assign alleles that are not represented to alleles that do
@@ -490,30 +508,20 @@ class AlleleForMock:
         # if only one snp, then it has to be random
         if one_snp:  # TBD: check if needed. Maybe redundant (966). It's NOT!!!
             for i, row in reads_with_no_alleles.iterrows():
-                # snp_type = random.choice(allele_phases)
-                # reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
                 reads_with_no_alleles.at[i, IS_RANDOM] = True
         else:
             windows_list = list(self._windows.values())
             for i, row in reads_with_no_alleles.iterrows():
-                # if did not find any snps = meaning that there is no chance of finding "best alignment" - random
-                # if len(row[SNP_PHASE]) == 0:
-                    # snp_type = random.choice(allele_phases)
-                    # reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
-                    # reads_with_no_alleles.at[i, IS_RANDOM] = True
-                # else:
                 seq = row[ALIGNMENT_W_DEL]
                 # find the best allele to assign this read. return best index of allele list
-                best_index, score, _, _ = self._best_index_wrapper(seq, windows_list)
-                # if there is better alignment between the alleles - set it
-                if score is not None:
+                best_index, score, is_random, _ = self._best_index_wrapper(seq, windows_list)
+                # if score is None or it is random:
+                if (score is None) or is_random:
+                    reads_with_no_alleles.at[i, IS_RANDOM] = True
+                else:
+                    # if there is better alignment between the alleles - set it
                     snp_type = allele_phases[best_index]
                     reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
-                # else - random assignment
-                else:
-                    # snp_type = random.choice(allele_phases)
-                    # reads_with_no_alleles.at[i, SNP_PHASE] = snp_type
-                    reads_with_no_alleles.at[i, IS_RANDOM] = True
 
         reads_with_alleles = pd.concat([reads_with_alleles, reads_with_no_alleles])
 
@@ -565,12 +573,18 @@ class AlleleForMock:
 
                 # if the snp not close to the cut site - k-mars to find the best part of the read for alignment
                 if not CTC:
-                    for t in range(len(relevant_read) - (len(SNP_window)) + 1):
+                    if i == 0:
+                        t = 0
+                    else:
+                        t = self._snp_locus[i-1] - len(SNP_window)
+                    while t < len(relevant_read) - (len(SNP_window)) + 1:
                         window = relevant_read[t: t + len(SNP_window)]
                         curr_gap_score = count_diff(SNP_window, window)
                         if curr_gap_score < smallest_gap:
                             smallest_gap = curr_gap_score
                             i_smallest = t
+                        t += 1
+
                     temp_scores.append(smallest_gap)
                     smallest_i_list.append(i_smallest)
 
@@ -664,7 +678,6 @@ class AlleleForMock:
                             new_CTC_list = [True] * len(CTC_list)
                             scores_new = self._calc_alignments_scores(curr_amplicon, SNP_window_information,
                                                                       new_CTC_list)
-                            # scores = [x for i, x in enumerate(scores_new) if i in new_best_indexes]
                             scores = np.array(scores_new)[:, new_best_indexes]
                             new_sums = np.sum(scores, axis=0)
                             # if all sums are equal - choose randomly out of the option of new_best_indexes

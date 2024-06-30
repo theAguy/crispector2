@@ -17,6 +17,8 @@ from crispector2.algorithm.core_algorithm import CoreAlgorithm
 from crispector2.modifications.modification_tables import ModificationTables
 from crispector2.modifications.modification_types import ModificationTypes
 from tqdm import tqdm
+import sys
+
 
 class Interval:
     """
@@ -130,11 +132,13 @@ class RandomReadsHandler:
         mock_reads_per_allele = dict()
         total_mock_per_site_d = dict()
         editing_reads_per_allele = dict()
-        total_edit_per_site_d = dict()
+        total_edit_per_site_d_before = dict()
+        total_edit_per_site_d_after = dict()
         for site in self._alleles_ref_d.keys():
             try:
                 site_name = site+'_'
-                total_edit_per_site_d[site] = 0
+                total_edit_per_site_d_before[site] = 0
+                total_edit_per_site_d_after[site] = 0
                 editing_reads_per_allele[site] = dict()
                 total_mock_per_site_d[site] = 0
                 mock_reads_per_allele[site] = dict()
@@ -142,8 +146,11 @@ class RandomReadsHandler:
                     if (site_name in subsite) and ('[' in subsite):
                         # for edit reads ratio
                         subsite_edit_reads = sum(subsite_info.tx_reads[subsite_info.tx_reads[IS_EDIT]==True][FREQ])
+                        total_edit_per_site_d_before[site] += subsite_edit_reads
+                        if subsite_edit_reads == 0:
+                            subsite_edit_reads = sys.float_info.epsilon
+                        total_edit_per_site_d_after[site] += subsite_edit_reads
                         editing_reads_per_allele[site][subsite] = subsite_edit_reads
-                        total_edit_per_site_d[site] += subsite_edit_reads
                         # for mock reads ratio
                         subsite_mock_reads = sum(subsite_info.mock_reads[FREQ])
                         mock_reads_per_allele[site][subsite] = subsite_mock_reads
@@ -156,12 +163,12 @@ class RandomReadsHandler:
             self._editing_ratios_d[site] = dict()
             self._mock_ratios_d[site] = dict()
             edit_reads = True
-            if total_edit_per_site_d[site] == 0:
+            if total_edit_per_site_d_before[site] == 0:
                 edit_reads = False
 
             if edit_reads:
                 for allele_tx, edit_reads_count in editing_reads_per_allele[site].items():
-                    self._editing_ratios_d[site][allele_tx] = edit_reads_count / total_edit_per_site_d[site]
+                    self._editing_ratios_d[site][allele_tx] = edit_reads_count / total_edit_per_site_d_after[site]
 
             for allele_mock, mock_read_count in mock_reads_per_allele[site].items():
                 self._mock_ratios_d[site][allele_mock] = mock_read_count / total_mock_per_site_d[site]
@@ -466,19 +473,20 @@ class RandomReadsHandler:
             for allele_name in alleles:
                 best_index_per_allele[allele_name] = medoid
 
-            # plotting the data points
-            if len(alleles) == 2:
-                x = [row[0] for row in data_points]
-                y = [row[1] for row in data_points]
-                label = [idx for idx in range(len(data_points))]
-                plt.scatter(x, y)
+            # enable plotting medoid
+            # # plotting the data points
+            # if len(alleles) == 2:
+            #     x = [row[0] for row in data_points]
+            #     y = [row[1] for row in data_points]
+            #     label = [idx for idx in range(len(data_points))]
+            #     plt.scatter(x, y)
 
-                for i, txt in enumerate(label):
-                    plt.annotate(txt, (x[i], y[i]))
-                plt.title(f'The medoid of site {site} is: {medoid}')
-                plt.savefig(os.path.join(self._outdir, f'medoid_{site}.png'), bbox_inches='tight')
-                plt.close()
-                plt.clf()
+            #     for i, txt in enumerate(label):
+            #         plt.annotate(txt, (x[i], y[i]))
+            #     plt.title(f'The medoid of site {site} is: {medoid}')
+            #     plt.savefig(os.path.join(self._outdir, f'medoid_{site}.png'), bbox_inches='tight')
+            #     plt.close()
+            #     plt.clf()
 
         return best_index_per_allele
 

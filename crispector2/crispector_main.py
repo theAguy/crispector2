@@ -22,6 +22,7 @@ from crispector2.allele.random_reads_handler import RandomReadsHandler
 from crispector2.allele.allele_reference_df import ref_dfAlleleHandler, is_snp_in_pam_grna
 from crispector2.allele.allele_tx import AlleleForTx
 from crispector2.input_processing.alignment import align_allele_df
+from crispector2.allele.inconsistent_allele_freq import analyze_gap_and_JS
 import os
 import pandas as pd
 from crispector2.modifications.modification_tables import ModificationTables
@@ -86,45 +87,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
         # process input
         tx_reads_d, mock_reads_d, tx_trans_df, mock_trans_df = input_processing.run(tx_in1, tx_in2, mock_in1, mock_in2)
 
-        # get alleles from mock
-        ##############################################################################################
-        # OUTFILE
-        ##############################################################################################
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_trans_df', 'wb')
-        # pickle.dump(tx_trans_df, outfile)
-        # outfile.close()
-        #
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_trans_df', 'wb')
-        # pickle.dump(mock_trans_df, outfile)
-        # outfile.close()
-        #
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_original', 'wb')
-        # pickle.dump(mock_reads_d, outfile)
-        # outfile.close()
-        #
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_original', 'wb')
-        # pickle.dump(tx_reads_d, outfile)
-        # outfile.close()
-        ##############################################################################################
-        # INFILE
-        ##############################################################################################
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_trans_df', 'rb')
-        # tx_trans_df = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_trans_df', 'rb')
-        # mock_trans_df = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_original', 'rb')
-        # mock_reads_d = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_original', 'rb')
-        # tx_reads_d = pickle.load(infile)
-        # infile.close()
-        ##############################################################################################
-        ##############################################################################################
         if allele:
             logger.info("Start analyzing alleles...")
             # finding alleles in each site in mock and insert to a new dictionary
@@ -135,45 +97,8 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                 Alleles.run(site_name, df_allele)
             mock_reads_d_allele = Alleles.new_alleles
             mock_random_reads_d = Alleles.random_reads
-        ##############################################################################################
-        # OUTFILE
-        ##############################################################################################
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_allele_multi', 'wb')
-        # pickle.dump(mock_reads_d_allele, outfile)
-        # outfile.close()
-        #
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/df_mock_tx_snp_ratios_multi', 'wb')
-        # pickle.dump(Alleles.df_mock_tx_snp_ratios, outfile)
-        # outfile.close()
-        #
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/alleles_ref_reads', 'wb')
-        # pickle.dump(Alleles.alleles_ref_reads, outfile)
-        # outfile.close()
-        #
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_random_reads_d', 'wb')
-        # pickle.dump(mock_random_reads_d, outfile)
-        # outfile.close()
-        ##############################################################################################
-        # INFILE
-        ##############################################################################################
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_allele_multi', 'rb')
-        # mock_reads_d_allele = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/df_mock_tx_snp_ratios_multi', 'rb')
-        # Alleles._df_mock_tx_snp_ratios = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/alleles_ref_reads', 'rb')
-        # Alleles.alleles_ref_reads = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_random_reads_d', 'rb')
-        # mock_random_reads_d = pickle.load(infile)
-        # infile.close()
+            alleles_mock_tx_ratios = Alleles.alleles_mock_tx_ratios
 
-        ##############################################################################################
-        ##############################################################################################
         if allele:
             # create new ref_df with the new sites
             ref_df_initializer = ref_dfAlleleHandler()
@@ -193,50 +118,18 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                     mock_reads_d[allele_info[0]] = allele_info[1]
         else:
             allele_ref_df = ref_df
-        ##############################################################################################
-        # OUTFILE
-        ##############################################################################################
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_final_multi', 'wb')
-        # pickle.dump(mock_reads_d, outfile)
-        # outfile.close()
-        ##############################################################################################
-        # INFILE
-        ##############################################################################################
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/mock_reads_d_final_multi', 'rb')
-        # mock_reads_d = pickle.load(infile)
-        # infile.close()
-        ##############################################################################################
-        ##############################################################################################
+
         if allele:
             logger.info("Start handling Tx with respect for their alleles")
             # treat all the treatment as for alleles
-            TxAllele = AlleleForTx(tx_reads_d, mock_reads_d_allele, Alleles.alleles_ref_reads)
+            TxAllele = AlleleForTx(tx_reads_d, mock_reads_d_allele, Alleles.alleles_ref_reads, alleles_mock_tx_ratios)
             tx_reads_d_allele, sites_score, ratios_df = TxAllele.run(Alleles.df_mock_tx_snp_ratios)
             tx_random_reads_d = TxAllele.random_reads
+            final_mock_tx_ratios = TxAllele.alleles_mock_tx_ratios
             # TBD: deleted the variable "original_sites", check if works without. if not - bring back
-
-        ##############################################################################################
-        # OUTFILE
-        ##############################################################################################
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_allele', 'wb')
-        # pickle.dump(tx_reads_d_allele, outfile)
-        # outfile.close()
-        #
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_random_reads_d', 'wb')
-        # pickle.dump(tx_random_reads_d, outfile)
-        # outfile.close()
-        ##############################################################################################
-        # INFILE
-        ##############################################################################################
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_allele', 'rb')
-        # tx_reads_d_allele = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_random_reads_d', 'rb')
-        # tx_random_reads_d = pickle.load(infile)
-        # infile.close()
-        ##############################################################################################
-        ##############################################################################################
+            unbalanced_sites = analyze_gap_and_JS(final_mock_tx_ratios)
+            for prob_site in unbalanced_sites:
+                logger.warning("Site {} - Inconsistent allele frequency. Please check this site.".format(prob_site))
         if allele:
             logger.info("Start re-aligning new Tx alleles sites to their reference amplicons")
             # align new site again - tx
@@ -247,34 +140,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                 for allele_name, allele_info in site_lists.items():
                     tx_reads_d[allele_info[0]] = allele_info[1]
 
-            # # TBD: New addition. With additional columns (is_filtered and is_random) NOT necessarily needed. CHECK IT OUT
-            # site_names = list(tx_reads_d.keys())
-            # for original_site_name, original_site_df in original_sites.items():
-            #     if original_site_name in site_names:
-            #         tx_reads_d[original_site_name] = original_site_df
-
-        ##############################################################################################
-        # OUTFILE
-        ##############################################################################################
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/aligned_tx_reads_d_allele', 'wb')
-        # pickle.dump(aligned_tx_reads_d_allele, outfile)
-        # outfile.close()
-        #
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_final', 'wb')
-        # pickle.dump(tx_reads_d, outfile)
-        # outfile.close()
-        ##############################################################################################
-        # INFILE
-        ##############################################################################################
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/aligned_tx_reads_d_allele', 'rb')
-        # aligned_tx_reads_d_allele = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tx_reads_d_final', 'rb')
-        # tx_reads_d = pickle.load(infile)
-        # infile.close()
-        ##############################################################################################
-        ##############################################################################################
         if allele:
             allele_ref_df.index.name = 'index'
             # allele_ref_df = allele_ref_df.merge(sites_score, how='left', left_on='Site Name', right_on='Site Name')
@@ -285,22 +150,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                 site_output = os.path.join(output, site)
                 if not os.path.exists(site_output):
                     os.makedirs(site_output)
-
-        ##############################################################################################
-        # OUTFILE
-        ##############################################################################################
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/allele_ref_df', 'wb')
-        # pickle.dump(aligned_tx_reads_d_allele, outfile)
-        # outfile.close()
-        ##############################################################################################
-        # INFILE
-        ##############################################################################################
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/allele_ref_df', 'rb')
-        # allele_ref_df = pickle.load(infile)
-        # infile.close()
-        # allele_ref_df = pd.DataFrame.from_dict(allele_ref_df)
-        ##############################################################################################
-        ##############################################################################################
 
         # Get modification types and positions priors
         modifications = ModificationTypes.init_from_cfg(enable_substitutions)
@@ -323,30 +172,6 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                 logger.debug("Site {} - Converted. Number of reads (treatment={}, mock={}).".format(site,
                                                                                                     tx_reads_num,
                                                                                                     mock_reads_num))
-
-        ##############################################################################################
-        # OUTFILE
-        ##############################################################################################
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tables_d', 'wb')
-        # pickle.dump(tables_d, outfile)
-        # outfile.close()
-        #
-        # outfile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/override_noise_estimation', 'wb')
-        # pickle.dump(override_noise_estimation, outfile)
-        # outfile.close()
-        ##############################################################################################
-        # INFILE
-        ##############################################################################################
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/tables_d', 'rb')
-        # tables_d = pickle.load(infile)
-        # infile.close()
-        #
-        # infile = open('/Users/guyassa/PycharmProjects/crispector2/to_be_deleted/pickle/override_noise_estimation', 'rb')
-        # override_noise_estimation = pickle.load(infile)
-        # infile.close()
-
-        ##############################################################################################
-        ##############################################################################################
 
         # Compute binomial coin for all modification types
         binom_p_d = compute_binom_p(tables_d, modifications, override_noise_estimation, allele_ref_df)
@@ -376,63 +201,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
                 result_summary_d[site][GRNA_WINDOW] = allele_ref_df.at[site, GRNA_WINDOW]
             else:
                 logger.debug("Site {} - Editing activity is {:.2f}".format(site, result_summary_d[site][EDIT_PERCENT]))
-        ##############################################################################################################
-        # # info for alleles plot
-        # info_allele_plot = dict()
-        # for parent_site, child_alleles in Alleles.new_alleles.items():
-        #     info_allele_plot[parent_site] = dict()
-        #     for allele_site_char, allele_site_info in child_alleles.items():
-        #         site_name = allele_site_info[0]
-        #         print(site_name)
-        #         snvs = allele_site_info[2]
-        #         ref_amp = allele_ref_df.at[site_name, REFERENCE]
-        #         pam = allele_ref_df.at[site_name, PAM_WINDOW]
-        #         grna = allele_ref_df.at[site_name, GRNA_WINDOW]
-        #         freq = None
-        #         info_allele_plot[parent_site][site_name] = {'RefAmp': ref_amp, 'frequency': freq, 'snvs': snvs,
-        #                                                     'pam': pam,
-        #                                                     'grna': grna}
-        # editing activity with no randomness
-        # for results_key, results_value in result_summary_d.items():
-        #     try:
-        #         if '[' in results_key:
-        #             EA = round(result_summary_d[results_key][EDIT_PERCENT],2)
-        #             logger.info("Site {} - Has {}% Before Random Reads.".format(results_key, EA))
-        #     except:
-        #         continue
-        # random_reads_for_analysis_d = dict()
-        # for site_to_check in tx_random_reads_d.keys():
-        #     random_reads_for_analysis_d[site_to_check] = {'total_mock': 0,
-        #                                                   'total_tx': 0,
-        #                                                   'random_mock': 0,
-        #                                                   'random_tx': 0,
-        #                                                   'random_mock_freq': 0,
-        #                                                   'random_tx_freq': 0}
-        #     try:
-        #         total_site_mock_reads = sum(tables_d[site_to_check].mock_reads[FREQ])
-        #         total_site_tx_reads = sum(tables_d[site_to_check].tx_reads[FREQ])
-        #         random_tx_freq = sum(tx_random_reads_d[site_to_check][FREQ])
-        #         random_mock_freq = 0
-        #         if site_to_check in mock_random_reads_d.keys():
-        #             random_mock_freq = sum(mock_random_reads_d[site_to_check][FREQ])
-        #         per_random_mock = round((random_mock_freq / total_site_mock_reads) * 100, 2)
-        #         per_random_tx = round((random_tx_freq / total_site_tx_reads) * 100, 2)
-        #
-        #         random_reads_for_analysis_d[site_to_check]['total_mock'] = total_site_mock_reads
-        #         random_reads_for_analysis_d[site_to_check]['total_tx'] = total_site_tx_reads
-        #         random_reads_for_analysis_d[site_to_check]['random_mock'] = random_mock_freq
-        #         random_reads_for_analysis_d[site_to_check]['random_tx'] = random_tx_freq
-        #         random_reads_for_analysis_d[site_to_check]['random_mock_freq'] = per_random_mock
-        #         random_reads_for_analysis_d[site_to_check]['random_tx_freq'] = per_random_tx
-        #
-        #         logger.warning("Site {} - Has {}% random mock reads.".format(site_to_check, per_random_mock))
-        #         logger.warning("Site {} - Has {}% random tx reads.".format(site_to_check, per_random_tx))
-        #     except:
-        #         continue
-        #
-        # random_for_analysis_df = pd.DataFrame.from_dict(random_reads_for_analysis_d, orient='index')
-        # random_for_analysis_df.to_csv(os.path.join(output, 'random_reads_stats.csv'))
-        ##############################################################################################################
+
         if allele:
             # handle the random reads that weren't assigned to alleles
             random_reads_handler = RandomReadsHandler(mock_random_reads_d, tx_random_reads_d, tables_d, result_summary_d,
@@ -508,7 +277,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
             logger.info("NOTE: You've asked to analyze alleles, however we did not find any.")
 
         # Create final HTML report
-        if 'editing_activity' in html_param_d['edit_section'].keys():  # check if there are sites to be shown
+        if 'editing_activity' in html_param_d['edit_section'].keys(): # check if there are sites to be shown
             create_final_html_report(html_param_d, report_output)
         else:
             logger.info("This experiment has no detected editing activity, thus there will be no html output.")
