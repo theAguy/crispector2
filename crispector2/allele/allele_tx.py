@@ -34,7 +34,7 @@ class AlleleForTx:
         # create list of sites to be handled
         self._sites_to_be_alleles = list(self.new_alleles.keys())
         self._new_tx_df = dict()
-        self._sites_score = pd.DataFrame(columns=[SITE_NAME, AVG_SCORE])
+        # self._sites_score = pd.DataFrame(columns=[SITE_NAME, AVG_SCORE])
         self.alleles_ref_reads = alleles_ref_reads
         self.random_reads = dict()
         self.alleles_mock_tx_ratios = alleles_ratios
@@ -160,8 +160,8 @@ class AlleleForTx:
                     ratios_dict[allele_type] = sum_reads
                     # calculate the alignment average score. If less than one [TBD]
                     avg_score = tx_site_df_temp[ALIGN_SCORE].mean(axis=0, skipna=True)
-                    self._sites_score = self._sites_score.append({SITE_NAME: allele_info[0], AVG_SCORE: avg_score},
-                                                                 ignore_index=True)
+                    # self._sites_score = self._sites_score.append({SITE_NAME: allele_info[0], AVG_SCORE: avg_score},
+                    #                                              ignore_index=True)
                     tx_site_df_temp = tx_site_df_temp.drop(labels=[ALLELE, ALIGN_SCORE], axis=1)
                     self._new_tx_df[tx_site_name][allele_type] = [allele_info[0], tx_site_df_temp]
                 # original_sites[tx_site_name] = tx_site_df  # TBD: maybe delete
@@ -177,4 +177,4 @@ class AlleleForTx:
                 # append to df ratios in order to keep track the ratios with compare to mock- TBD: return later
                 ratios_df.at[list(ratios_df['site_name']).index(tx_site_name), 'tx_ratios'] = ratios_dict
 
-        return self._new_tx_df, round(self._sites_score, 3), ratios_df  # original_sites
+        return self._new_tx_df, ratios_df  # original_sites # , round(self._sites_score, 3)
