@@ -739,7 +739,7 @@ def calc_entropy(temp_df):
               sorted_nuc_dict: A dictionary of the nucleotides' distribution
      """
     # computing unique nuc bases
-    df = temp_df.set_axis([BASE, FREQ], axis=1, inplace=False)
+    df = temp_df.set_axis([BASE, FREQ], axis=1)
     nuc_bases = set(df.iloc[:, 0])
     nuc_dict = {}
     # computing nuc bases distribution (including deletions '-')
@@ -809,14 +809,22 @@ def get_most_freq_val(lst):
     :param: lst: list of values
     :return: the most frequent values (can be many)
     """
-    # using df to get the desired output
-    df = pd.DataFrame({'Number': lst})
-    df1 = pd.DataFrame(data=df['Number'].value_counts())
-    df1['Count'] = df1['Number']
-    df1['Number'] = df1.index
-    df1 = df1.reset_index(drop=True)
+    # # using df to get the desired output
+    # df = pd.DataFrame({'Number': lst})
+    # df1 = pd.DataFrame(data=df['Number'].value_counts())
+    # df1['Count'] = df1['Number']
+    # df1['Number'] = df1.index
+    # df1 = df1.reset_index(drop=True)
+    #
+    # return list(df1[df1['Count'] == df1.Count.max()]['Number'])
 
-    return list(df1[df1['Count'] == df1.Count.max()]['Number'])
+    counts = Counter(lst)
+    max_count = counts.most_common(1)[0][1]
+    out = [value for value, count in counts.most_common() if count == max_count]
+
+    return out
+
+
 
 
 # TBD: consider delete this function as it's not having any functionality

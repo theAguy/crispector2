@@ -123,7 +123,7 @@ def run(tx_in1: Path, tx_in2: Path, mock_in1: Path, mock_in2: Path, report_outpu
             logger.info("Start handling Tx with respect for their alleles")
             # treat all the treatment as for alleles
             TxAllele = AlleleForTx(tx_reads_d, mock_reads_d_allele, Alleles.alleles_ref_reads, alleles_mock_tx_ratios)
-            tx_reads_d_allele, sites_score, ratios_df = TxAllele.run(Alleles.df_mock_tx_snp_ratios)
+            tx_reads_d_allele, ratios_df = TxAllele.run(Alleles.df_mock_tx_snp_ratios)  # sites_score
             tx_random_reads_d = TxAllele.random_reads
             final_mock_tx_ratios = TxAllele.alleles_mock_tx_ratios
             # TBD: deleted the variable "original_sites", check if works without. if not - bring back
